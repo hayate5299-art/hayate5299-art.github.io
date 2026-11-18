@@ -201,6 +201,31 @@
       .relfeel b { font-weight: 700; }
       .locked-note { text-align: center; padding: 14px 8px 8px; color: var(--ink2); }
 
+      /* ---------- 表示切り替え・プロフィール帳表示 ---------- */
+      .viewseg { display: flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+      .viewseg button { flex: 1; border: none; background: transparent; color: var(--ink2); min-height: 42px; font-size: 13.5px; padding: 6px 8px; }
+      .viewseg button.on { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .prof-top { display: grid; gap: 14px; margin-bottom: 14px; }
+      .prof-top > * { min-width: 0; }
+      @media (min-width: 760px) { .prof-top { grid-template-columns: 1.35fr 1fr; align-items: start; } }
+      .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--surface2); scrollbar-width: thin; }
+      .cslide { flex: 0 0 100%; scroll-snap-align: start; position: relative; cursor: pointer; }
+      .cslide img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+      .cslide .cap { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 12.5px; padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .cslide .idx { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; }
+      .c-noimg { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
+      .c-noimg span { font-family: var(--font-head); font-size: 64px; font-weight: 700; color: rgba(255,255,255,.85); }
+      .prof-info { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; }
+      .prof-dl { margin: 14px 0 0; display: flex; flex-direction: column; gap: 9px; }
+      .prof-dl > div { display: flex; gap: 10px; align-items: flex-start; }
+      .prof-dl dt { flex: none; width: 7.2em; font-size: 12.5px; color: var(--ink2); font-weight: 700; padding-top: 3px; }
+      .prof-dl dd { margin: 0; flex: 1; min-width: 0; }
+      .prof-sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 14px; }
+      .prof-sec h2 { font-size: 16.5px; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+      .prof-sec .cnt { font-size: 12.5px; color: var(--ink2); font-family: var(--font-body); font-weight: 400; }
+      .redact { background: #101012; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(140,140,140,.35); }
+      .redact-line { height: 1.05em; margin: 7px 0; }
+
       /* ---------- モーダル ---------- */
       .overlay {
         position: fixed; inset: 0; background: rgba(10,10,12,.55); z-index: 60;
@@ -308,7 +333,7 @@
     function defaultState() {
       return {
         categories: [ { id: uid(), name: '自創作' }, { id: uid(), name: '代理' } ],
-        characters: [], design: 'chic', recentColors: []
+        characters: [], design: 'chic', recentColors: [], viewMode: 'sections'
       };
     }
     function loadState() {
@@ -455,6 +480,8 @@
       toast(ui.preview ? 'プレビューモードです。見るだけの表示になっています' : 'プレビューを終わりました');
       render();
     }
+    function charViewMode() { return state.viewMode === 'profile' ? 'profile' : 'sections'; }
+    function setCharView(mode) { state.viewMode = mode; save(); render(); }
 
     /* ================= 一覧画面 ================= */
     function filteredChars() {
@@ -630,6 +657,11 @@
         '<span class="preview-badge">👁 プレビュー中</span><span style="flex:1"></span>' +
         '<button type="button" class="btn edit-only" onclick="openCharForm(\'' + c.id + '\')">✏️ 編集</button>' +
         '<button type="button" class="btn" onclick="togglePreview()">' + (ui.preview ? 'プレビューを終わる' : '👁 プレビュー') + '</button></div>';
+      /* 表示切り替え（項目ごと表示／プロフィール帳表示） */
+      h += '<div class="viewseg" role="group" aria-label="表示の切り替え" style="margin-bottom:12px">' +
+        '<button type="button" class="' + (charViewMode() === 'profile' ? '' : 'on') + '" onclick="setCharView(\'sections\')">項目ごと表示</button>' +
+        '<button type="button" class="' + (charViewMode() === 'profile' ? 'on' : '') + '" onclick="setCharView(\'profile\')">📖 プロフィール帳表示</button></div>';
+      if (charViewMode() === 'profile') { h += profileBookHTML(c); app.innerHTML = h; layoutCrops(); return; }
       /* ヘッダー */
       h += '<div class="char-header">';
       if (hi) h += cropImgHTML(hi, c.headerCrop, 'fill');
@@ -776,6 +808,115 @@
       }
       sectionOrder(c).forEach(function (k) { h += secParts[k] || ''; });
       app.innerHTML = h;
+    }
+    /* ================= プロフィール帳表示 ================= */
+    function profileBookHTML(c) {
+      var full = fullName(c), headN = headName(c);
+      var h = '<div class="prof-top">';
+      /* 参考画像（横スワイプ） */
+      h += '<div>';
+      if ((c.images || []).length) {
+        h += '<div class="carousel">' + c.images.map(function (img, i) {
+          return '<div class="cslide" onclick="openViewer(\'' + img.id + '\')" role="button" tabindex="0" aria-label="参考画像を大きく見る">' +
+            '<img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '">' +
+            '<span class="idx">' + (i + 1) + ' / ' + c.images.length + '</span>' +
+            (img.caption ? '<span class="cap">' + esc(img.caption) + '</span>' : '') + '</div>';
+        }).join('') + '</div>';
+        h += '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">' +
+          (c.images.length > 1 ? '← 横にスワイプすると、ほかの画像が見られます。タップすると大きく表示されます。' : 'タップすると大きく表示されます。') + '</p>';
+      } else {
+        h += '<div class="carousel"><div class="cslide"><div class="c-noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div></div></div>' +
+          '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">まだ参考画像がありません。</p>';
+      }
+      if (!ui.preview) h += '<div style="margin-top:8px"><button type="button" class="btn btn-small" onclick="document.getElementById(\'file-imgs\').click()">＋ 参考画像を追加</button></div>';
+      h += '</div>';
+      /* 基本情報 */
+      h += '<div class="prof-info"><div style="display:flex;gap:12px;align-items:center">' + iconHTML(c, 72) +
+        '<div style="min-width:0">' + (c.furigana ? '<div class="furigana">' + esc(c.furigana) + '</div>' : '') +
+        '<div class="char-name" style="font-size:clamp(22px,5vw,30px)">' + esc(headN) + '</div>' +
+        (full !== headN ? '<div class="char-full">' + esc(full) + '</div>' : '') + '</div></div>' +
+        '<dl class="prof-dl">' +
+        '<div><dt>区分</dt><dd><span class="catbadge">' + esc(catName(c.categoryId)) + '</span></dd></div>' +
+        '<div><dt>イメージカラー</dt><dd><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</dd></div>' +
+        ((c.tags || []).length ? '<div><dt>タグ</dt><dd>' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join(' ') + '</dd></div>' : '') +
+        '</dl>' +
+        (c.memo ? '<div style="margin-top:12px">' + longTextHTML(c.memo, c.id + ':memo') + '</div>' : '') +
+        '</div></div>';
+      /* 下の情報（項目の並び順に合わせます。参考画像は上に表示済みです） */
+      sectionOrder(c).forEach(function (key) {
+        if (key === 'prompts') {
+          h += '<div class="prof-sec"><h2>プロンプト <span class="cnt">' + (c.prompts || []).length + '件</span></h2>';
+          if (!(c.prompts || []).length) {
+            h += '<p class="empty-note">まだプロンプトがありません。</p>';
+          } else {
+            h += c.prompts.map(function (p) {
+              return '<div class="item"><div class="item-top"><span class="item-title">' + esc(p.title || '（タイトルなし）') + '</span>' +
+                '<span class="item-btns"><button type="button" class="btn btn-primary btn-small" onclick="copyPrompt(\'' + p.id + '\')">コピー</button>' +
+                (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openPromptForm(\'' + p.id + '\')">編集</button>' +
+                '<button type="button" class="btn btn-small btn-danger" onclick="deletePrompt(\'' + p.id + '\')">削除</button>') +
+                '</span></div><div class="item-body">' + longTextHTML(p.body, c.id + ':pr:' + p.id) + '</div></div>';
+            }).join('');
+          }
+          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openPromptForm(null)">＋ プロンプトを追加</button>';
+          h += '</div>';
+        }
+        if (key === 'links') {
+          h += '<div class="prof-sec"><h2>リンク <span class="cnt">' + (c.links || []).length + '件</span></h2>';
+          if (!(c.links || []).length) {
+            h += '<p class="empty-note">まだリンクがありません。</p>';
+          } else {
+            h += c.links.map(function (l) {
+              return '<div class="item"><div class="item-top"><span class="item-title"><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a></span>' +
+                '<span class="item-btns">' +
+                (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openLinkForm(\'' + l.id + '\')">編集</button>' +
+                '<button type="button" class="btn btn-small btn-danger" onclick="deleteLink(\'' + l.id + '\')">削除</button>') +
+                '</span></div><div style="font-size:12.5px;color:var(--ink2);word-break:break-all">' + esc(l.url) + '</div></div>';
+            }).join('');
+          }
+          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openLinkForm(null)">＋ リンクを追加</button>';
+          h += '</div>';
+        }
+        if (key === 'rels') {
+          h += '<div class="prof-sec"><h2>関係性 <span class="cnt">' + (c.relationships || []).length + '件</span></h2>';
+          if (!(c.relationships || []).length) {
+            h += '<p class="empty-note">まだ関係性がありません。</p>';
+          } else {
+            h += c.relationships.map(function (r) {
+              var o = findChar(r.otherId);
+              var oName = o ? headName(o) : '（削除されたキャラクター）';
+              var s = '<div class="relcard" onclick="goChar(\'' + r.otherId + '\')" role="button" tabindex="0">' +
+                (o ? iconHTML(o, 48) : '<span class="iconinitial" style="width:48px;height:48px;background:#999;font-size:22px">？</span>') +
+                '<span class="relcard-main"><span class="item-title">' + esc(oName) + '</span>' +
+                (r.label ? ' <span class="catbadge">' + esc(r.label) + '</span>' : '');
+              if (r.memo) s += '<span style="display:block">' + longTextHTML(r.memo, c.id + ':rel:' + r.rid) + '</span>';
+              if (r.feelingsTo) s += '<span class="relfeel" style="display:block"><b>' + esc(headN) + ' → ' + esc(oName) + '：</b>' + esc(r.feelingsTo) + '</span>';
+              if (r.feelingsFrom) s += '<span class="relfeel" style="display:block"><b>' + esc(oName) + ' → ' + esc(headN) + '：</b>' + esc(r.feelingsFrom) + '</span>';
+              s += '</span>';
+              if (!ui.preview) {
+                s += '<span class="item-btns"><button type="button" class="btn btn-small" onclick="event.stopPropagation();openRelForm(\'' + r.rid + '\')">編集</button>' +
+                  '<button type="button" class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteRel(\'' + r.rid + '\')">削除</button></span>';
+              }
+              return s + '</div>';
+            }).join('');
+          }
+          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openRelForm(null)">＋ 関係性を追加</button>';
+          h += '</div>';
+        }
+        if (key === 'secrets') {
+          /* プロフィール帳表示では、秘匿情報は鍵を開けていても黒塗り🔒のまま表示します */
+          h += '<div class="prof-sec"><h2>🔒 秘匿情報</h2>';
+          if (!(c.secrets || []).length) {
+            h += '<p class="empty-note">秘匿情報は登録されていません。</p>';
+          } else {
+            h += c.secrets.map(function () {
+              return '<div class="item" aria-hidden="true"><div class="redact redact-line" style="width:42%"></div><div class="redact redact-line"></div><div class="redact redact-line" style="width:68%"></div></div>';
+            }).join('');
+            h += '<p style="text-align:center;color:var(--ink2);font-size:13px;margin:6px 0 2px">🔒 プロフィール帳表示では、秘匿情報は黒塗りのまま表示されます。<br>中身を見るときは「項目ごと表示」に切り替えてください。</p>';
+          }
+          h += '</div>';
+        }
+      });
+      return h;
     }
     function askUnlock() {
       var c = findChar(ui.charId);
@@ -1483,6 +1624,8 @@
         '<p>人に見せたくない設定はここに分けて書けます。開くときに確認が入り、プレビュー中は表示されません。</p>' +
         '<h3>並べ替え・畳む</h3>' +
         '<p>「⇅ 項目を並べ替える」を押すと、参考画像・プロンプト・リンク・関係性・🔒秘匿情報といった項目そのものの順番を、↑↓ボタンで入れ替えられます（キャラクターごとに保存されます）。各セクションの「⇅ 並べ替え」では、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
+        '<h3>表示の切り替え（プロフィール帳表示）</h3>' +
+        '<p>キャラクターのページ上部の切り替えで、「項目ごと表示」と「📖 プロフィール帳表示」を選べます。プロフィール帳表示では、参考画像が横にスワイプできる形で大きく並び、その横に名前・区分・イメージカラー・タグ・メモなどの基本情報、下にプロンプト・リンク・関係性などがひとつにまとまって表示されます。選んだ表示はそのまま覚えられます。🔒秘匿情報は、プロフィール帳表示では鍵を開けているときでも中身を見せず、黒塗りのまま表示されます。</p>' +
         '<h3>デザイン</h3>' +
         '<p>「🎨 デザイン」から、シック・かわいい・ポップ・ナチュラル・ゴージャスの5種類を選べます。変わるのはまわりの枠だけで、写真やアイコン、イメージカラーは元の色のままです。</p>' +
         '<h3>プレビュー</h3>' +
