@@ -1,0 +1,1464 @@
+<!doctype html>
+<html lang="ja" data-design="chic">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>自創作・代理まとめ HTML版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body { margin: 0; }
+
+      /* ---------- デザインテーマ（CSS変数） ---------- */
+      :root {
+        --radius: 10px; --radius-lg: 14px;
+        --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", sans-serif;
+        --font-head: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+      }
+      :root, :root[data-design="chic"] {
+        --bg:#f7f7f5; --surface:#ffffff; --surface2:#efefec; --ink:#17171a; --ink2:#4c4d52;
+        --line:#d8d8d3; --accent:#17171a; --accent-ink:#ffffff; --chip:#ececea; --danger:#b3352c;
+        --radius:8px; --radius-lg:10px; --font-head:"Shippori Mincho B1","Hiragino Mincho ProN",serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-design="chic"] {
+          --bg:#0e0e10; --surface:#17181b; --surface2:#222329; --ink:#f0f0ee; --ink2:#b0b1b6;
+          --line:#35363d; --accent:#f0f0ee; --accent-ink:#141416; --chip:#232429; --danger:#e58a83;
+        }
+      }
+      :root[data-design="kawaii"] {
+        --bg:#fdf3f6; --surface:#ffffff; --surface2:#fbe9ef; --ink:#452a38; --ink2:#7d5568;
+        --line:#f0cdd9; --accent:#c94f7c; --accent-ink:#ffffff; --chip:#fbe0ea; --danger:#b3352c;
+        --radius:16px; --radius-lg:20px; --font-head:"M PLUS Rounded 1c","Zen Kaku Gothic New",sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-design="kawaii"] {
+          --bg:#221319; --surface:#2e1a23; --surface2:#3a2230; --ink:#f9e6ee; --ink2:#d3a9bc;
+          --line:#52303f; --accent:#ef9dbd; --accent-ink:#33101f; --chip:#402631; --danger:#f0a49d;
+        }
+      }
+      :root[data-design="pop"] {
+        --bg:#fdf6d3; --surface:#ffffff; --surface2:#fff3c4; --ink:#23242a; --ink2:#5a5b52;
+        --line:#e7d488; --accent:#e8490f; --accent-ink:#ffffff; --chip:#ffeeb0; --danger:#c22e2e;
+        --radius:12px; --radius-lg:16px; --font-head:"M PLUS Rounded 1c","Zen Kaku Gothic New",sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-design="pop"] {
+          --bg:#17181f; --surface:#22232c; --surface2:#2d2e26; --ink:#f6f2df; --ink2:#b9bba6;
+          --line:#45452f; --accent:#ff8a5f; --accent-ink:#2a1005; --chip:#33331f; --danger:#f09a8d;
+        }
+      }
+      :root[data-design="natural"] {
+        --bg:#f3f6ee; --surface:#ffffff; --surface2:#e9efe0; --ink:#2c382a; --ink2:#57654f;
+        --line:#cfdbc0; --accent:#446b3c; --accent-ink:#ffffff; --chip:#e4edd7; --danger:#b3352c;
+        --radius:12px; --radius-lg:16px; --font-head:"Zen Kaku Gothic New",sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-design="natural"] {
+          --bg:#12160f; --surface:#1b2117; --surface2:#252d1f; --ink:#eaf0e2; --ink2:#aebba2;
+          --line:#37422f; --accent:#9cc489; --accent-ink:#15210f; --chip:#26301f; --danger:#f0a49d;
+        }
+      }
+      :root[data-design="gorgeous"] {
+        --bg:#f7f2e6; --surface:#fffdf6; --surface2:#f1e8d0; --ink:#2b2113; --ink2:#6d5a3a;
+        --line:#d9c896; --accent:#8a6a14; --accent-ink:#fff6da; --chip:#efe4c2; --danger:#a52a21;
+        --radius:6px; --radius-lg:8px; --font-head:"Shippori Mincho B1","Hiragino Mincho ProN",serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root[data-design="gorgeous"] {
+          --bg:#0a0a09; --surface:#15140f; --surface2:#201d13; --ink:#f2e8cd; --ink2:#bfab7d;
+          --line:#54451f; --accent:#cfa92e; --accent-ink:#1a1403; --chip:#26200e; --danger:#f09a8d;
+        }
+      }
+
+      body {
+        background: var(--bg); color: var(--ink);
+        font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+      }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 14px clamp(12px, 3vw, 28px) 72px; }
+      h1, h2, h3 { font-family: var(--font-head); line-height: 1.35; margin: 0; }
+      button { font-family: inherit; cursor: pointer; }
+      input, select, textarea { font-family: inherit; font-size: 16px; color: var(--ink); }
+      a { color: var(--accent); }
+
+      /* ---------- ボタン ---------- */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        min-height: 40px; padding: 6px 14px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink); border-radius: var(--radius);
+        font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .btn-small { min-height: 36px; padding: 4px 10px; font-size: 13px; }
+      .btn-danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+      .btn-ghost { border-color: transparent; background: transparent; }
+      .btn[disabled] { opacity: .45; cursor: default; }
+
+      /* ---------- ツールバー・検索・チップ ---------- */
+      .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+      .searchbox { flex: 1 1 220px; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 12px; }
+      .searchbox input { flex: 1; border: none; background: transparent; min-height: 42px; outline: none; }
+      .preview-badge { display: none; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+      body.preview .preview-badge { display: inline-block; }
+      .chiprow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+      .chip {
+        min-height: 36px; padding: 4px 14px; border-radius: 999px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink); font-size: 13.5px;
+      }
+      .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .chip .cnt { opacity: .75; font-size: 12px; margin-left: 4px; }
+      .tagchip {
+        display: inline-flex; align-items: center; min-height: 32px; padding: 2px 10px;
+        border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 13px; border: 1px solid transparent;
+      }
+      button.tagchip { cursor: pointer; }
+      .tagchip.on { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .rowlabel { font-size: 12.5px; color: var(--ink2); margin: 2px 0 6px; letter-spacing: .04em; }
+
+      /* ---------- 一覧カード ---------- */
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 235px), 1fr)); gap: 14px; }
+      @media (max-width: 620px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+      @media (max-width: 350px) { .grid { grid-template-columns: 1fr; } }
+      .card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+        overflow: hidden; cursor: pointer; text-align: left; padding: 0; width: 100%;
+        display: flex; flex-direction: column; color: var(--ink);
+      }
+      .card-head { aspect-ratio: 16 / 7; position: relative; flex: none; }
+      .card-noimg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .card-noimg span { font-family: var(--font-head); font-size: 44px; font-weight: 700; color: rgba(255,255,255,.88); }
+      .card-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+      .card-idrow { display: flex; gap: 10px; align-items: center; }
+      .card-names { min-width: 0; }
+      .card-name { font-family: var(--font-head); font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .card-full { font-size: 12px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .card-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--ink2); }
+      .catbadge { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-weight: 500; color: var(--ink); }
+      .card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+      .card-memo { font-size: 12.5px; color: var(--ink2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+      /* ---------- 画像フレーム（切り抜き表示） ---------- */
+      .cropframe { position: relative; overflow: hidden; background: var(--surface2); }
+      .cropframe > img { position: absolute; max-width: none; max-height: none; display: block; }
+      .cropframe.fill { position: absolute; inset: 0; }
+      .iconframe { border-radius: 50%; flex: none; border: 1px solid var(--line); }
+      .iconinitial {
+        border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-head); font-weight: 700; color: rgba(255,255,255,.92); border: 1px solid var(--line);
+      }
+
+      /* ---------- キャラクターページ ---------- */
+      .backrow { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+      .char-header { aspect-ratio: 16 / 7; border-radius: var(--radius-lg); border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--surface2); }
+      .char-header .noimg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .char-header .noimg span { font-family: var(--font-head); font-size: clamp(48px, 10vw, 84px); font-weight: 700; color: rgba(255,255,255,.85); }
+      .header-actions { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+      .header-actions .btn { background: var(--surface); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
+      .profile { display: flex; gap: 14px; align-items: center; margin: 16px 0 6px; flex-wrap: wrap; }
+      .furigana { font-size: 12.5px; color: var(--ink2); letter-spacing: .14em; }
+      .char-name { font-size: clamp(24px, 5.4vw, 34px); font-weight: 700; }
+      .char-full { font-size: 13.5px; color: var(--ink2); }
+      .colordot { display: inline-block; width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); vertical-align: -2px; margin-right: 5px; }
+      .memobox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 12px 14px; margin: 10px 0 18px; white-space: pre-wrap; word-break: break-word; }
+
+      .section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); margin-bottom: 14px; overflow: hidden; }
+      .section-head {
+        width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; border: none;
+        padding: 12px 14px; min-height: 48px; color: var(--ink); text-align: left;
+      }
+      .section-head h2 { font-size: 17px; font-weight: 700; flex: 1; }
+      .section-head .cnt { font-size: 12.5px; color: var(--ink2); }
+      .section-head .chev { color: var(--ink2); font-size: 13px; }
+      .section-body { padding: 2px 14px 14px; }
+      .section-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+      .empty-note { color: var(--ink2); font-size: 13.5px; padding: 6px 0 2px; }
+
+      .item { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 10px; background: var(--surface); }
+      .item-top { display: flex; gap: 8px; align-items: flex-start; }
+      .item-title { font-weight: 700; flex: 1; min-width: 0; word-break: break-word; }
+      .item-btns { display: flex; gap: 5px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+      .item-body { white-space: pre-wrap; word-break: break-word; background: var(--surface2); border-radius: var(--radius); padding: 9px 11px; margin-top: 8px; font-size: 14px; }
+      .clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+      .morebtn { background: none; border: none; color: var(--accent); font-size: 13px; padding: 6px 2px; min-height: 36px; font-weight: 700; }
+      .movebtns { display: flex; gap: 5px; }
+
+      .imggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 9px; }
+      .imgthumb { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); padding: 0; background: var(--surface2); cursor: pointer; width: 100%; }
+      .imgthumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+      .imgthumb .headermark { position: absolute; left: 6px; top: 6px; background: rgba(0,0,0,.62); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+      .imgthumb .cap { display: block; font-size: 11.5px; color: var(--ink2); padding: 4px 7px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--surface); }
+
+      .relcard { display: flex; gap: 11px; align-items: flex-start; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 10px; color: var(--ink); cursor: pointer; }
+      .relcard-main { flex: 1; min-width: 0; }
+      .relfeel { font-size: 13px; margin-top: 5px; white-space: pre-wrap; word-break: break-word; }
+      .relfeel b { font-weight: 700; }
+      .locked-note { text-align: center; padding: 14px 8px 8px; color: var(--ink2); }
+
+      /* ---------- モーダル ---------- */
+      .overlay {
+        position: fixed; inset: 0; background: rgba(10,10,12,.55); z-index: 60;
+        display: none; align-items: flex-end; justify-content: center; padding: 0;
+      }
+      .overlay.open { display: flex; }
+      @media (min-width: 700px) { .overlay { align-items: center; padding: 20px; } }
+      .sheet {
+        background: var(--surface); color: var(--ink); width: 100%; max-width: 680px;
+        max-height: 92dvh; overflow-y: auto; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        padding: 18px clamp(14px, 4vw, 26px) 26px;
+      }
+      @media (min-width: 700px) { .sheet { border-radius: var(--radius-lg); } }
+      .sheet h2 { font-size: 19px; margin-bottom: 12px; }
+      .sheet h3 { font-size: 15px; margin: 18px 0 8px; }
+      .field { margin-bottom: 13px; }
+      .field label, .field .flabel { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+      .field .hint { font-size: 12px; color: var(--ink2); font-weight: 400; margin-top: 3px; }
+      .field input[type="text"], .field input[type="url"], .field select, .field textarea {
+        width: 100%; border: 1px solid var(--line); border-radius: var(--radius);
+        background: var(--surface); padding: 9px 11px; min-height: 42px;
+      }
+      .field textarea { min-height: 84px; resize: vertical; line-height: 1.6; }
+      .fieldrow { display: flex; gap: 9px; }
+      .fieldrow > * { flex: 1; min-width: 0; }
+      .segrow { display: flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+      .segrow button { flex: 1; border: none; background: var(--surface); color: var(--ink2); min-height: 42px; font-size: 12.5px; padding: 4px 1px; line-height: 1.35; }
+      .segrow button.on { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+      .form-actions .spacer { flex: 1; }
+      .namepreview { background: var(--surface2); border-radius: var(--radius); padding: 9px 12px; font-size: 13.5px; }
+      .colorrow { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+      input[type="color"] { width: 56px; height: 42px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 3px; cursor: pointer; }
+      .hexinput { width: 118px !important; flex: none; text-transform: lowercase; }
+      .presetrow { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; }
+      .preset { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+      .preset.on { border-color: var(--ink); transform: scale(1.08); }
+      .presetname { font-size: 11.5px; color: var(--ink2); text-align: center; }
+      .presetwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+      .tagedit { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+      .tagedit .tagchip button { border: none; background: none; color: inherit; min-height: 28px; padding: 0 2px 0 5px; font-size: 14px; cursor: pointer; }
+      .designcard {
+        display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 12px;
+        border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+        color: var(--ink); margin-bottom: 9px; cursor: pointer; min-height: 56px;
+      }
+      .designcard.on { border-color: var(--accent); border-width: 2px; }
+      .designswatch { width: 40px; height: 40px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
+      .catrow { display: flex; gap: 7px; align-items: center; margin-bottom: 9px; }
+      .catrow input { flex: 1; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; min-height: 40px; background: var(--surface); min-width: 0; }
+      .helpbody p { margin: 0 0 9px; font-size: 14px; }
+      .helpbody h3 { font-family: var(--font-head); }
+
+      /* ---------- 画像ビューア・切り抜き編集 ---------- */
+      .viewerbox { text-align: center; }
+      .viewerbox img.big { max-width: 100%; max-height: 62dvh; border-radius: var(--radius); background: #000; }
+      .viewer-cap { margin: 10px 0; white-space: pre-wrap; word-break: break-word; }
+      .viewer-btns { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+      .cropstage { position: relative; overflow: hidden; background: #111; border-radius: var(--radius); margin: 0 auto; touch-action: none; max-width: 100%; }
+      .cropstage img { position: absolute; max-width: none; max-height: none; display: block; cursor: grab; }
+      input[type="range"] { width: 100%; min-height: 40px; accent-color: var(--accent); }
+
+      #toast {
+        position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px);
+        background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+        font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 99;
+        max-width: 92vw; text-align: center; box-shadow: 0 4px 18px rgba(0,0,0,.3);
+      }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      body.preview .edit-only { display: none !important; }
+      .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" id="app"></div>
+
+    <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+    <div id="toast" role="status"></div>
+    <input type="file" id="file-imgs" accept="image/*" multiple class="sr" />
+    <input type="file" id="file-icon" accept="image/*" class="sr" />
+    <input type="file" id="file-import" accept="application/json,.json" class="sr" />
+
+    <script>
+    'use strict';
+    /* ================= データ管理 ================= */
+    var LS_KEY = 'uchinoko-htmlban-v1';
+    var PRESETS = [
+      { n: 'すみれ', c: '#7b6bb5' }, { n: 'ばら', c: '#c2546e' }, { n: 'こはく', c: '#d29a3c' },
+      { n: 'ひすい', c: '#3f9e7a' }, { n: 'そら', c: '#4f83b8' }, { n: 'あい', c: '#3c4f8f' }
+    ];
+    var DESIGNS = [
+      { id: 'chic', name: 'シック', desc: 'モノトーンの枠で大人っぽく。写真や色はそのまま映えます', sw: 'linear-gradient(135deg,#17171a 50%,#f7f7f5 50%)' },
+      { id: 'kawaii', name: 'かわいい', desc: 'ピンクとまるみで、やさしい雰囲気に', sw: 'linear-gradient(135deg,#ef9dbd 50%,#fdf3f6 50%)' },
+      { id: 'pop', name: 'ポップ', desc: '明るい色で元気いっぱいに', sw: 'linear-gradient(135deg,#e8490f 50%,#ffeeb0 50%)' },
+      { id: 'natural', name: 'ナチュラル', desc: '緑と生成りの、落ち着いた雰囲気に', sw: 'linear-gradient(135deg,#446b3c 50%,#e4edd7 50%)' },
+      { id: 'gorgeous', name: 'ゴージャス', desc: 'アイボリーと深い金色で豪華に（暗い画面では黒×金）', sw: 'linear-gradient(135deg,#8a6a14 50%,#f7f2e6 50%)' }
+    ];
+    function uid() { return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+    function defaultState() {
+      return {
+        categories: [ { id: uid(), name: '自創作' }, { id: uid(), name: '代理' } ],
+        characters: [], design: 'chic', recentColors: []
+      };
+    }
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) { var s = JSON.parse(raw); if (s && Array.isArray(s.characters) && Array.isArray(s.categories)) return s; }
+      } catch (e) {}
+      return defaultState();
+    }
+    var state = loadState();
+    var saveWarned = false;
+    function save() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+      catch (e) { if (!saveWarned) { saveWarned = true; toast('保存できませんでした。ブラウザの容量がいっぱいの可能性があります'); } }
+    }
+    /* 画面だけの状態（保存しない） */
+    var ui = {
+      view: 'list', charId: null, catFilter: 'all', tagFilter: null, query: '',
+      preview: false, unlocked: {}, collapsed: {}, reorderKey: null, expanded: {}
+    };
+
+    /* ================= 共通ヘルパー ================= */
+    function findChar(id) { return state.characters.find(function (c) { return c.id === id; }) || null; }
+    function catName(id) { var c = state.categories.find(function (x) { return x.id === id; }); return c ? c.name : '未分類'; }
+    function fullName(c) {
+      if (c.nameStyle === 'jp') return ((c.family || '') + ' ' + (c.given || '')).trim() || c.name || '';
+      if (c.nameStyle === 'en') return ((c.given || '') + ' ' + (c.family || '')).trim() || c.name || '';
+      return c.name || '';
+    }
+    function headName(c) {
+      if (c.nameStyle === 'jp' || c.nameStyle === 'en') return c.given || fullName(c);
+      return c.name || '';
+    }
+    function initialOf(c) { var n = headName(c); return n ? n.charAt(0) : '？'; }
+    function allTags() {
+      var m = {};
+      state.characters.forEach(function (c) { (c.tags || []).forEach(function (t) { m[t] = (m[t] || 0) + 1; }); });
+      return Object.keys(m).map(function (t) { return { name: t, count: m[t] }; })
+        .sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name, 'ja'); });
+    }
+    function headerImg(c) {
+      if (!c.images || !c.images.length) return null;
+      return c.images.find(function (i) { return i.id === c.headerImgId; }) || c.images[0];
+    }
+    function pushRecent(color) {
+      state.recentColors = [color].concat((state.recentColors || []).filter(function (x) { return x !== color; })).slice(0, 8);
+    }
+    function complement(hex) {
+      if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return '#888888';
+      function h(v) { return ('0' + v.toString(16)).slice(-2); }
+      return '#' + h(255 - parseInt(hex.slice(1, 3), 16)) + h(255 - parseInt(hex.slice(3, 5), 16)) + h(255 - parseInt(hex.slice(5, 7), 16));
+    }
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toast._tm);
+      toast._tm = setTimeout(function () { t.classList.remove('show'); }, 2300);
+    }
+    function copyText(t) {
+      function done() { toast('コピーしました'); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t, done); });
+      } else fallbackCopy(t, done);
+    }
+    function fallbackCopy(t, done) {
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { toast('コピーできませんでした'); }
+      document.body.removeChild(ta);
+    }
+    function longTextHTML(text, key) {
+      text = text || '';
+      if (text.length <= 160) return '<div>' + esc(text) + '</div>';
+      var open = !!ui.expanded[key];
+      return '<div class="' + (open ? '' : 'clamp') + '">' + esc(text) + '</div>' +
+        '<button type="button" class="morebtn" onclick="toggleExpand(\'' + key + '\')">' + (open ? '閉じる' : '続きを読む') + '</button>';
+    }
+    function toggleExpand(key) { ui.expanded[key] = !ui.expanded[key]; render(); }
+
+    /* 切り抜き表示（ヘッダー・アイコン） */
+    function cropImgHTML(img, crop, cls) {
+      crop = crop || { x: .5, y: .5, zoom: 1 };
+      return '<div class="cropframe ' + (cls || '') + '"><img alt="" src="' + img.src + '" data-nw="' + (img.w || 1) + '" data-nh="' + (img.h || 1) +
+        '" data-x="' + crop.x + '" data-y="' + crop.y + '" data-zoom="' + crop.zoom + '"></div>';
+    }
+    function iconHTML(c, size) {
+      if (c.icon && c.icon.src) {
+        return '<div class="cropframe iconframe" style="width:' + size + 'px;height:' + size + 'px">' +
+          '<img alt="" src="' + c.icon.src + '" data-nw="' + (c.icon.w || 1) + '" data-nh="' + (c.icon.h || 1) +
+          '" data-x="' + c.icon.x + '" data-y="' + c.icon.y + '" data-zoom="' + c.icon.zoom + '"></div>';
+      }
+      return '<div class="iconinitial" style="width:' + size + 'px;height:' + size + 'px;background:' + esc(c.color || '#888') + ';font-size:' + Math.round(size * .48) + 'px">' + esc(initialOf(c)) + '</div>';
+    }
+    function layoutCrops() {
+      document.querySelectorAll('.cropframe').forEach(function (f) {
+        var img = f.querySelector('img'); if (!img) return;
+        var W = f.clientWidth, H = f.clientHeight; if (!W || !H) return;
+        var nw = +img.getAttribute('data-nw') || 1, nh = +img.getAttribute('data-nh') || 1;
+        var s = Math.max(W / nw, H / nh) * (+img.getAttribute('data-zoom') || 1);
+        var w = nw * s, h = nh * s;
+        img.style.width = w + 'px'; img.style.height = h + 'px';
+        img.style.left = ((+img.getAttribute('data-x') || .5) * (W - w)) + 'px';
+        img.style.top = ((+img.getAttribute('data-y') || .5) * (H - h)) + 'px';
+      });
+    }
+    window.addEventListener('resize', layoutCrops);
+</script>
+    <script>
+    /* ================= モーダル共通 ================= */
+    var overlayEl = document.getElementById('overlay');
+    var sheetEl = document.getElementById('sheet');
+    function openSheet(html) { sheetEl.innerHTML = html; overlayEl.classList.add('open'); sheetEl.scrollTop = 0; }
+    function closeSheet() { overlayEl.classList.remove('open'); sheetEl.innerHTML = ''; cropEd = null; form = null; }
+    overlayEl.addEventListener('click', function (e) { if (e.target === overlayEl) closeSheet(); });
+    function sheetHead(title) {
+      return '<div style="display:flex;align-items:flex-start;gap:8px"><h2 style="flex:1">' + esc(title) + '</h2>' +
+        '<button type="button" class="btn btn-ghost btn-small" onclick="closeSheet()" aria-label="閉じる">✕</button></div>';
+    }
+    var confirmCb = null;
+    function askConfirm(title, msg, okLabel, cb, danger) {
+      confirmCb = cb;
+      openSheet(sheetHead(title) + '<p style="white-space:pre-wrap">' + esc(msg) + '</p>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn ' + (danger ? 'btn-danger' : 'btn-primary') + '" onclick="doConfirm()">' + esc(okLabel) + '</button></div>');
+    }
+    function doConfirm() { var cb = confirmCb; confirmCb = null; closeSheet(); if (cb) cb(); }
+
+    /* ================= 画面遷移 ================= */
+    function render() {
+      document.documentElement.setAttribute('data-design', state.design || 'chic');
+      document.body.classList.toggle('preview', ui.preview);
+      if (ui.view === 'char' && findChar(ui.charId)) renderCharPage();
+      else { ui.view = 'list'; renderList(); }
+      layoutCrops();
+    }
+    function goChar(id) { ui.view = 'char'; ui.charId = id; ui.reorderKey = null; window.scrollTo(0, 0); render(); }
+    function backList() { ui.view = 'list'; ui.charId = null; render(); }
+    function setCatFilter(id) { ui.catFilter = id; render(); }
+    function setTagFilter(t) { ui.tagFilter = (ui.tagFilter === t) ? null : t; render(); }
+    function onSearch(v) { ui.query = v; renderListBody(); layoutCrops(); }
+    function togglePreview() {
+      ui.preview = !ui.preview;
+      toast(ui.preview ? 'プレビューモードです。見るだけの表示になっています' : 'プレビューを終わりました');
+      render();
+    }
+
+    /* ================= 一覧画面 ================= */
+    function filteredChars() {
+      var q = ui.query.trim().toLowerCase();
+      return state.characters.filter(function (c) {
+        if (ui.catFilter === 'none') {
+          if (state.categories.some(function (x) { return x.id === c.categoryId; })) return false;
+        } else if (ui.catFilter !== 'all' && c.categoryId !== ui.catFilter) return false;
+        if (ui.tagFilter && (c.tags || []).indexOf(ui.tagFilter) < 0) return false;
+        if (q) {
+          var hay = [fullName(c), headName(c), c.family || '', c.given || '', c.furigana || '', catName(c.categoryId)]
+            .concat(c.tags || []).join(' ').toLowerCase();
+          if (hay.indexOf(q) < 0) return false;
+        }
+        return true;
+      });
+    }
+    function renderList() {
+      var app = document.getElementById('app');
+      var tags = allTags();
+      var h = '';
+      h += '<div class="toolbar">' +
+        '<div class="searchbox"><span aria-hidden="true">🔍</span><input type="search" id="search" placeholder="名前・フリガナ・タグで検索" value="' + esc(ui.query) + '" oninput="onSearch(this.value)"></div>' +
+        '<span class="preview-badge">👁 プレビュー中</span></div>';
+      h += '<div class="toolbar">' +
+        '<button type="button" class="btn btn-primary edit-only" onclick="openCharForm(null)">＋ キャラクターを追加</button>' +
+        '<button type="button" class="btn edit-only" onclick="openCatManager()">区分を管理</button>' +
+        '<button type="button" class="btn edit-only" onclick="openDesignPicker()">🎨 デザイン</button>' +
+        '<button type="button" class="btn" onclick="togglePreview()">' + (ui.preview ? 'プレビューを終わる' : '👁 プレビュー') + '</button>' +
+        '<button type="button" class="btn edit-only" onclick="openDataMenu()">データ</button>' +
+        '<button type="button" class="btn" onclick="openHelp()">？ ヘルプ</button></div>';
+      h += '<div class="chiprow" role="group" aria-label="区分で絞り込み">' +
+        '<button type="button" class="chip' + (ui.catFilter === 'all' ? ' on' : '') + '" onclick="setCatFilter(\'all\')">すべて<span class="cnt">' + state.characters.length + '</span></button>';
+      state.categories.forEach(function (cat) {
+        var n = state.characters.filter(function (c) { return c.categoryId === cat.id; }).length;
+        h += '<button type="button" class="chip' + (ui.catFilter === cat.id ? ' on' : '') + '" onclick="setCatFilter(\'' + cat.id + '\')">' + esc(cat.name) + '<span class="cnt">' + n + '</span></button>';
+      });
+      var un = state.characters.filter(function (c) { return !state.categories.some(function (x) { return x.id === c.categoryId; }); }).length;
+      if (un) h += '<button type="button" class="chip' + (ui.catFilter === 'none' ? ' on' : '') + '" onclick="setCatFilter(\'none\')">未分類<span class="cnt">' + un + '</span></button>';
+      h += '</div>';
+      if (tags.length) {
+        h += '<p class="rowlabel">タグで絞り込み</p><div class="chiprow">';
+        tags.forEach(function (t) {
+          h += '<button type="button" class="tagchip' + (ui.tagFilter === t.name ? ' on' : '') + '" onclick="setTagFilter(\'' + esc(t.name) + '\')">#' + esc(t.name) + '<span class="cnt" style="margin-left:4px;opacity:.75">' + t.count + '</span></button>';
+        });
+        h += '</div>';
+      }
+      h += '<div id="listbody"></div>';
+      app.innerHTML = h;
+      renderListBody();
+    }
+    function renderListBody() {
+      var body = document.getElementById('listbody');
+      if (!body) return;
+      if (!state.characters.length) {
+        body.innerHTML = '<div class="memobox" style="text-align:center;padding:28px 16px">まだキャラクターがいません。<br>「＋ キャラクターを追加」から、最初の1人を登録してみてください。</div>';
+        return;
+      }
+      var list = filteredChars();
+      if (!list.length) {
+        body.innerHTML = '<div class="memobox" style="text-align:center;padding:24px 16px">条件に合うキャラクターが見つかりませんでした。<br>検索や絞り込みを変えてみてください。</div>';
+        return;
+      }
+      var h = '<div class="grid">';
+      list.forEach(function (c) { h += cardHTML(c); });
+      h += '</div>';
+      body.innerHTML = h;
+      layoutCrops();
+    }
+    function cardHTML(c) {
+      var hi = headerImg(c);
+      var head = hi ? cropImgHTML(hi, c.headerCrop, 'fill')
+        : '<div class="card-noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div>';
+      var full = fullName(c), headN = headName(c);
+      var h = '<button type="button" class="card" onclick="goChar(\'' + c.id + '\')">' +
+        '<span class="card-head">' + head + '</span>' +
+        '<span class="card-body"><span class="card-idrow">' + iconHTML(c, 44) +
+        '<span class="card-names"><span class="card-name">' + esc(headN) + '</span>' +
+        (full !== headN ? '<span class="card-full" style="display:block">' + esc(full) + '</span>' : '') +
+        '</span></span>' +
+        '<span class="card-meta"><span class="catbadge">' + esc(catName(c.categoryId)) + '</span>' +
+        '<span>プロンプト ' + (c.prompts || []).length + '</span>' +
+        ((c.relationships || []).length ? '<span>関係性 ' + c.relationships.length + '</span>' : '') +
+        '</span>';
+      if ((c.tags || []).length) {
+        h += '<span class="card-tags">' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join('') + '</span>';
+      }
+      if (c.memo) h += '<span class="card-memo">' + esc(c.memo) + '</span>';
+      h += '</span></button>';
+      return h;
+    }
+    </script>
+    <script>
+    /* ================= キャラクターページ ================= */
+    function sectionHTML(c, key, title, count, bodyHTML, toolsHTML) {
+      var ck = c.id + ':' + key;
+      var closed = !!ui.collapsed[ck];
+      var h = '<div class="section"><button type="button" class="section-head" onclick="toggleSection(\'' + ck + '\')">' +
+        '<h2>' + esc(title) + '</h2><span class="cnt">' + count + '</span>' +
+        '<span class="chev">' + (closed ? '▸' : '▾') + '</span></button>';
+      if (!closed) {
+        h += '<div class="section-body">' + (toolsHTML || '') + bodyHTML + '</div>';
+      }
+      return h + '</div>';
+    }
+    function toggleSection(ck) { ui.collapsed[ck] = !ui.collapsed[ck]; render(); }
+    function toggleAllSections(id, close) {
+      ['images', 'prompts', 'links', 'rels', 'secrets'].forEach(function (k) { ui.collapsed[id + ':' + k] = close; });
+      render();
+    }
+    function reorderTools(key) {
+      if (ui.preview) return '';
+      if (ui.reorderKey === key) {
+        return '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="endReorder()">並べ替えを終わる</button></div>';
+      }
+      return '<div class="section-tools"><button type="button" class="btn btn-small" onclick="startReorder(\'' + key + '\')">⇅ 並べ替え</button></div>';
+    }
+    function startReorder(key) { ui.reorderKey = key; render(); }
+    function endReorder() { ui.reorderKey = null; render(); }
+    function moveBtns(key, idx, total) {
+      if (ui.reorderKey !== key) return '';
+      return '<span class="movebtns">' +
+        '<button type="button" class="btn btn-small" ' + (idx === 0 ? 'disabled' : '') + ' onclick="event.stopPropagation();moveItem(\'' + key + '\',' + idx + ',-1)" aria-label="上へ">↑</button>' +
+        '<button type="button" class="btn btn-small" ' + (idx === total - 1 ? 'disabled' : '') + ' onclick="event.stopPropagation();moveItem(\'' + key + '\',' + idx + ',1)" aria-label="下へ">↓</button></span>';
+    }
+    function moveItem(key, idx, dir) {
+      var c = findChar(ui.charId); if (!c) return;
+      var arr = c[key]; var j = idx + dir;
+      if (!arr || j < 0 || j >= arr.length) return;
+      var tmp = arr[idx]; arr[idx] = arr[j]; arr[j] = tmp;
+      save(); render();
+    }
+
+    function renderCharPage() {
+      var c = findChar(ui.charId); if (!c) { backList(); return; }
+      var app = document.getElementById('app');
+      var hi = headerImg(c);
+      var full = fullName(c), headN = headName(c);
+      var h = '';
+      h += '<div class="backrow"><button type="button" class="btn" onclick="backList()">← 一覧へ戻る</button>' +
+        '<span class="preview-badge">👁 プレビュー中</span><span style="flex:1"></span>' +
+        '<button type="button" class="btn edit-only" onclick="openCharForm(\'' + c.id + '\')">✏️ 編集</button>' +
+        '<button type="button" class="btn" onclick="togglePreview()">' + (ui.preview ? 'プレビューを終わる' : '👁 プレビュー') + '</button></div>';
+      /* ヘッダー */
+      h += '<div class="char-header">';
+      if (hi) h += cropImgHTML(hi, c.headerCrop, 'fill');
+      else h += '<div class="noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div>';
+      if (!ui.preview) {
+        h += '<div class="header-actions">' +
+          (hi ? '<button type="button" class="btn btn-small" onclick="openHeaderCrop()">位置を調整</button>' : '') +
+          '<button type="button" class="btn btn-small" onclick="document.getElementById(\'file-imgs\').click()">＋ 画像を追加</button></div>';
+      }
+      h += '</div>';
+      /* プロフィール */
+      h += '<div class="profile">' + iconHTML(c, 84) + '<div style="min-width:0">' +
+        (c.furigana ? '<div class="furigana">' + esc(c.furigana) + '</div>' : '') +
+        '<h1 class="char-name">' + esc(headN) + '</h1>' +
+        (full !== headN ? '<div class="char-full">' + esc(full) + '</div>' : '') +
+        '<div class="card-meta" style="margin-top:5px"><span class="catbadge">' + esc(catName(c.categoryId)) + '</span>' +
+        '<span><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</span></div>' +
+        '</div></div>';
+      if ((c.tags || []).length) {
+        h += '<div class="chiprow">' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join('') + '</div>';
+      }
+      if (c.memo) h += '<div class="memobox">' + longTextHTML(c.memo, c.id + ':memo') + '</div>';
+      h += '<div class="backrow"><button type="button" class="btn btn-small" onclick="toggleAllSections(\'' + c.id + '\',true)">すべて畳む</button>' +
+        '<button type="button" class="btn btn-small" onclick="toggleAllSections(\'' + c.id + '\',false)">すべて開く</button></div>';
+
+      /* 参考画像 */
+      var imgTools = '';
+      if (!ui.preview) {
+        imgTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="document.getElementById(\'file-imgs\').click()">＋ 参考画像を追加</button></div>' +
+          ((c.images || []).length > 1 ? reorderTools('images') : '');
+      }
+      var imgBody;
+      if (!(c.images || []).length) {
+        imgBody = '<p class="empty-note">まだ参考画像がありません。「＋ 参考画像を追加」から、スマホの写真を選んで追加できます。最初の1枚がヘッダーになります。</p>';
+      } else {
+        imgBody = '<div class="imggrid">';
+        c.images.forEach(function (img, idx) {
+          imgBody += '<span style="display:block"><button type="button" class="imgthumb" onclick="openViewer(\'' + img.id + '\')">' +
+            '<img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '">' +
+            (hi && img.id === hi.id ? '<span class="headermark">ヘッダー</span>' : '') +
+            (img.caption ? '<span class="cap">' + esc(img.caption) + '</span>' : '') +
+            '</button>' + (ui.reorderKey === 'images' && !ui.preview ? '<span style="display:flex;justify-content:center;margin-top:4px">' + moveBtns('images', idx, c.images.length) + '</span>' : '') + '</span>';
+        });
+        imgBody += '</div>';
+      }
+      h += sectionHTML(c, 'images', '参考画像', (c.images || []).length + '枚', imgBody, imgTools);
+
+      /* プロンプト */
+      var prTools = '';
+      if (!ui.preview) {
+        prTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="openPromptForm(null)">＋ プロンプトを追加</button></div>' +
+          ((c.prompts || []).length > 1 ? reorderTools('prompts') : '');
+      }
+      var prBody;
+      if (!(c.prompts || []).length) {
+        prBody = '<p class="empty-note">まだプロンプトがありません。タイトルと本文をセットで登録でき、ボタンひとつでコピーできます。</p>';
+      } else {
+        prBody = c.prompts.map(function (p, idx) {
+          return '<div class="item"><div class="item-top"><span class="item-title">' + esc(p.title || '（タイトルなし）') + '</span>' +
+            '<span class="item-btns">' + moveBtns('prompts', idx, c.prompts.length) +
+            '<button type="button" class="btn btn-primary btn-small" onclick="copyPrompt(\'' + p.id + '\')">コピー</button>' +
+            (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openPromptForm(\'' + p.id + '\')">編集</button>' +
+            '<button type="button" class="btn btn-small btn-danger" onclick="deletePrompt(\'' + p.id + '\')">削除</button>') +
+            '</span></div><div class="item-body">' + longTextHTML(p.body, c.id + ':pr:' + p.id) + '</div></div>';
+        }).join('');
+      }
+      h += sectionHTML(c, 'prompts', 'プロンプト', (c.prompts || []).length + '件', prBody, prTools);
+
+      /* リンク */
+      var lkTools = '';
+      if (!ui.preview) {
+        lkTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="openLinkForm(null)">＋ リンクを追加</button></div>' +
+          ((c.links || []).length > 1 ? reorderTools('links') : '');
+      }
+      var lkBody;
+      if (!(c.links || []).length) {
+        lkBody = '<p class="empty-note">まだリンクがありません。関連ページのURLなどを登録できます。</p>';
+      } else {
+        lkBody = c.links.map(function (l, idx) {
+          return '<div class="item"><div class="item-top"><span class="item-title"><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a></span>' +
+            '<span class="item-btns">' + moveBtns('links', idx, c.links.length) +
+            (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openLinkForm(\'' + l.id + '\')">編集</button>' +
+            '<button type="button" class="btn btn-small btn-danger" onclick="deleteLink(\'' + l.id + '\')">削除</button>') +
+            '</span></div><div style="font-size:12.5px;color:var(--ink2);word-break:break-all">' + esc(l.url) + '</div></div>';
+        }).join('');
+      }
+      h += sectionHTML(c, 'links', 'リンク', (c.links || []).length + '件', lkBody, lkTools);
+
+      /* 関係性 */
+      var relTools = '';
+      if (!ui.preview) {
+        relTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="openRelForm(null)">＋ 関係性を追加</button></div>' +
+          ((c.relationships || []).length > 1 ? reorderTools('relationships') : '');
+      }
+      var relBody;
+      if (!(c.relationships || []).length) {
+        relBody = '<p class="empty-note">まだ関係性がありません。ほかのキャラクターとの関係を登録すると、相手のページにも自動で表示されます。</p>';
+      } else {
+        relBody = c.relationships.map(function (r, idx) {
+          var o = findChar(r.otherId);
+          var oName = o ? headName(o) : '（削除されたキャラクター）';
+          var s = '<div class="relcard" onclick="goChar(\'' + r.otherId + '\')" role="button" tabindex="0">' +
+            (o ? iconHTML(o, 48) : '<span class="iconinitial" style="width:48px;height:48px;background:#999;font-size:22px">？</span>') +
+            '<span class="relcard-main"><span class="item-title">' + esc(oName) + '</span>' +
+            (r.label ? ' <span class="catbadge">' + esc(r.label) + '</span>' : '');
+          if (r.memo) s += '<span style="display:block">' + longTextHTML(r.memo, c.id + ':rel:' + r.rid) + '</span>';
+          if (r.feelingsTo) s += '<span class="relfeel" style="display:block"><b>' + esc(headN) + ' → ' + esc(oName) + '：</b>' + esc(r.feelingsTo) + '</span>';
+          if (r.feelingsFrom) s += '<span class="relfeel" style="display:block"><b>' + esc(oName) + ' → ' + esc(headN) + '：</b>' + esc(r.feelingsFrom) + '</span>';
+          s += '</span>';
+          if (!ui.preview) {
+            s += '<span class="item-btns">' + moveBtns('relationships', idx, c.relationships.length) +
+              '<button type="button" class="btn btn-small" onclick="event.stopPropagation();openRelForm(\'' + r.rid + '\')">編集</button>' +
+              '<button type="button" class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteRel(\'' + r.rid + '\')">削除</button></span>';
+          }
+          return s + '</div>';
+        }).join('');
+      }
+      h += sectionHTML(c, 'rels', '関係性', (c.relationships || []).length + '件', relBody, relTools);
+
+      /* 秘匿情報 */
+      var secBody;
+      if (ui.preview || !ui.unlocked[c.id]) {
+        secBody = '<div class="locked-note"><p>🔒 この中身は鍵がかかっています。</p>' +
+          (ui.preview ? '' : '<button type="button" class="btn" onclick="askUnlock()">鍵を開けて表示</button>') + '</div>';
+        h += sectionHTML(c, 'secrets', '🔒 秘匿情報', '非表示', secBody, '');
+      } else {
+        var secTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="openSecretForm(null)">＋ 秘匿情報を追加</button>' +
+          '<button type="button" class="btn btn-small" onclick="lockSecrets()">鍵をかける</button></div>' +
+          ((c.secrets || []).length > 1 ? reorderTools('secrets') : '');
+        if (!(c.secrets || []).length) {
+          secBody = '<p class="empty-note">まだ秘匿情報がありません。人に見せたくない設定などを、ここに分けて書けます。</p>';
+        } else {
+          secBody = c.secrets.map(function (s, idx) {
+            return '<div class="item"><div class="item-top"><span class="item-title">' + esc(s.label || '（ラベルなし）') + '</span>' +
+              '<span class="item-btns">' + moveBtns('secrets', idx, c.secrets.length) +
+              '<button type="button" class="btn btn-small" onclick="openSecretForm(\'' + s.id + '\')">編集</button>' +
+              '<button type="button" class="btn btn-small btn-danger" onclick="deleteSecret(\'' + s.id + '\')">削除</button></span></div>' +
+              '<div class="item-body">' + longTextHTML(s.body, c.id + ':sec:' + s.id) + '</div></div>';
+          }).join('');
+        }
+        h += sectionHTML(c, 'secrets', '🔒 秘匿情報', (c.secrets || []).length + '件', secBody, secTools);
+      }
+      app.innerHTML = h;
+    }
+    function askUnlock() {
+      var c = findChar(ui.charId);
+      askConfirm('秘匿情報を表示しますか？', '「' + headName(c) + '」の秘匿情報を表示します。\nまわりに人がいないか確認してから開けてください。', '表示する', function () {
+        ui.unlocked[ui.charId] = true; render();
+      });
+    }
+    function lockSecrets() { ui.unlocked[ui.charId] = false; render(); }
+    function copyPrompt(pid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var p = (c.prompts || []).find(function (x) { return x.id === pid; });
+      if (p) copyText(p.body || '');
+    }
+    </script>
+    <script>
+    /* ================= 画像の追加・圧縮 ================= */
+    function processImageFile(file, cb) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.naturalWidth, hgt = img.naturalHeight, max = 1400;
+          var s = Math.min(1, max / Math.max(w, hgt));
+          var cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(hgt * s));
+          var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+          cb({ src: cv.toDataURL('image/jpeg', 0.85), w: cw, h: ch });
+        };
+        img.onerror = function () { toast('画像を読み込めませんでした'); };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    document.getElementById('file-imgs').addEventListener('change', function (e) {
+      var files = Array.prototype.slice.call(e.target.files || []);
+      e.target.value = '';
+      var c = findChar(ui.charId); if (!c || !files.length) return;
+      var done = 0;
+      files.forEach(function (f) {
+        processImageFile(f, function (rec) {
+          rec.id = uid(); rec.caption = '';
+          c.images = c.images || []; c.images.push(rec);
+          if (c.images.length === 1) { c.headerImgId = rec.id; c.headerCrop = { x: .5, y: .5, zoom: 1 }; }
+          done++;
+          if (done === files.length) { save(); render(); toast('画像を追加しました'); }
+        });
+      });
+    });
+
+    /* ================= 画像ビューア ================= */
+    var viewerImgId = null;
+    function openViewer(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      viewerImgId = imgId;
+      var hi = headerImg(c);
+      var isHeader = hi && hi.id === img.id;
+      var h = sheetHead('参考画像') + '<div class="viewerbox">' +
+        '<img class="big" src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '">' +
+        (img.caption ? '<p class="viewer-cap">' + esc(img.caption) + '</p>' : '<p class="viewer-cap" style="color:var(--ink2)">（キャプションなし）</p>') +
+        '<div class="viewer-btns">' +
+        (ui.preview ? '' :
+          '<button type="button" class="btn" onclick="editCaption()">キャプションを編集</button>' +
+          (isHeader ? '<button type="button" class="btn" onclick="openHeaderCrop();">ヘッダーの位置を調整</button>'
+                    : '<button type="button" class="btn" onclick="setHeader(\'' + img.id + '\')">ヘッダーにする</button>') +
+          '<button type="button" class="btn" onclick="setIconFromImage(\'' + img.id + '\')">アイコンにする</button>' +
+          '<button type="button" class="btn" onclick="setBothFromImage(\'' + img.id + '\')">★ ヘッダーとアイコンに両方する</button>' +
+          '<button type="button" class="btn btn-danger" onclick="deleteImage(\'' + img.id + '\')">この画像を削除</button>') +
+        '</div></div>';
+      openSheet(h);
+    }
+    function editCaption() {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === viewerImgId; }); if (!img) return;
+      openSheet(sheetHead('キャプションを編集') +
+        '<div class="field"><label for="cap-input">キャプション</label>' +
+        '<input type="text" id="cap-input" value="' + esc(img.caption || '') + '" placeholder="例：制服姿の参考"></div>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="openViewer(\'' + img.id + '\')">戻る</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="saveCaption()">保存する</button></div>');
+      document.getElementById('cap-input').focus();
+    }
+    function saveCaption() {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === viewerImgId; }); if (!img) return;
+      img.caption = document.getElementById('cap-input').value.trim();
+      save(); closeSheet(); render(); toast('キャプションを保存しました');
+    }
+    function setHeader(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      c.headerImgId = imgId; c.headerCrop = { x: .5, y: .5, zoom: 1 };
+      save(); closeSheet(); render(); toast('ヘッダーに設定しました');
+    }
+    function setIconFromImage(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      openCrop(img.src, img.w, img.h, '1 / 1', c.icon && c.icon.src === img.src ? c.icon : null, function (crop) {
+        c.icon = crop; save(); closeSheet(); render(); toast('アイコンに設定しました');
+      });
+    }
+    function setBothFromImage(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      c.headerImgId = imgId; c.headerCrop = { x: .5, y: .5, zoom: 1 };
+      c.icon = { src: img.src, w: img.w, h: img.h, x: .5, y: .5, zoom: 1 };
+      save(); closeSheet(); render(); toast('ヘッダーとアイコンの両方に設定しました');
+    }
+    function deleteImage(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      askConfirm('画像を削除しますか？', 'この参考画像を削除します。元に戻せません。', '削除する', function () {
+        c.images = (c.images || []).filter(function (i) { return i.id !== imgId; });
+        if (c.headerImgId === imgId) { var nh = headerImg(c); c.headerImgId = nh ? nh.id : null; c.headerCrop = { x: .5, y: .5, zoom: 1 }; }
+        save(); render(); toast('画像を削除しました');
+      }, true);
+    }
+    function openHeaderCrop() {
+      var c = findChar(ui.charId); if (!c) return;
+      var hi = headerImg(c); if (!hi) return;
+      openCrop(hi.src, hi.w, hi.h, '16 / 7', c.headerCrop, function (crop) {
+        c.headerCrop = { x: crop.x, y: crop.y, zoom: crop.zoom };
+        save(); closeSheet(); render(); toast('ヘッダーの位置を調整しました');
+      });
+    }
+
+    /* ================= 切り抜きエディタ ================= */
+    var cropEd = null;
+    function openCrop(src, w, h, aspect, init, onDone) {
+      cropEd = { src: src, w: w || 1, h: h || 1, x: init ? init.x : .5, y: init ? init.y : .5, zoom: init ? init.zoom : 1, onDone: onDone };
+      var wide = aspect === '16 / 7';
+      openSheet(sheetHead(wide ? 'ヘッダーの位置を調整' : 'アイコンの位置を調整') +
+        '<p style="font-size:13.5px;color:var(--ink2);margin:0 0 10px">画像をドラッグして位置を動かし、スライダーで大きさを調整してください。枠の中が実際に表示される範囲です。</p>' +
+        '<div class="cropstage" id="cropstage" style="aspect-ratio:' + aspect + ';' + (wide ? 'width:100%' : 'width:min(320px,100%);border-radius:50%') + '">' +
+        '<img id="cropimg" src="' + src + '" alt=""></div>' +
+        '<div class="field" style="margin-top:12px"><label for="cropzoom">大きさ</label>' +
+        '<input type="range" id="cropzoom" min="1" max="3" step="0.01" value="' + cropEd.zoom + '"></div>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="doneCrop()">この位置にする</button></div>');
+      var stage = document.getElementById('cropstage');
+      var img = document.getElementById('cropimg');
+      layoutCropStage();
+      document.getElementById('cropzoom').addEventListener('input', function (e) {
+        cropEd.zoom = parseFloat(e.target.value); layoutCropStage();
+      });
+      var drag = null;
+      stage.addEventListener('pointerdown', function (e) {
+        drag = { px: e.clientX, py: e.clientY, x: cropEd.x, y: cropEd.y };
+        stage.setPointerCapture(e.pointerId);
+      });
+      stage.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        var W = stage.clientWidth, H = stage.clientHeight;
+        var s = Math.max(W / cropEd.w, H / cropEd.h) * cropEd.zoom;
+        var iw = cropEd.w * s, ih = cropEd.h * s;
+        if (W - iw !== 0) cropEd.x = Math.min(1, Math.max(0, drag.x + (e.clientX - drag.px) / (W - iw)));
+        if (H - ih !== 0) cropEd.y = Math.min(1, Math.max(0, drag.y + (e.clientY - drag.py) / (H - ih)));
+        layoutCropStage();
+      });
+      ['pointerup', 'pointercancel'].forEach(function (ev) { stage.addEventListener(ev, function () { drag = null; }); });
+    }
+    function layoutCropStage() {
+      if (!cropEd) return;
+      var stage = document.getElementById('cropstage'), img = document.getElementById('cropimg');
+      if (!stage || !img) return;
+      var W = stage.clientWidth, H = stage.clientHeight; if (!W || !H) return;
+      var s = Math.max(W / cropEd.w, H / cropEd.h) * cropEd.zoom;
+      var w = cropEd.w * s, h = cropEd.h * s;
+      img.style.width = w + 'px'; img.style.height = h + 'px';
+      img.style.left = (cropEd.x * (W - w)) + 'px'; img.style.top = (cropEd.y * (H - h)) + 'px';
+    }
+    function doneCrop() {
+      if (!cropEd) return;
+      var cb = cropEd.onDone;
+      var res = { src: cropEd.src, w: cropEd.w, h: cropEd.h, x: cropEd.x, y: cropEd.y, zoom: cropEd.zoom };
+      cropEd = null;
+      if (cb) cb(res); else closeSheet();
+    }
+    </script>
+    <script>
+    /* ================= キャラクター追加・編集フォーム ================= */
+    var form = null;
+    function openCharForm(charId) {
+      var c = charId ? findChar(charId) : null;
+      form = {
+        id: c ? c.id : null,
+        nameStyle: c ? (c.nameStyle || 'single') : 'single',
+        name: c ? (c.name || '') : '', family: c ? (c.family || '') : '', given: c ? (c.given || '') : '',
+        furigana: c ? (c.furigana || '') : '',
+        categoryId: c ? c.categoryId : (state.categories[0] ? state.categories[0].id : null),
+        color: c ? (c.color || '#7b6bb5') : '#7b6bb5',
+        tags: c ? (c.tags || []).slice() : [],
+        memo: c ? (c.memo || '') : '',
+        icon: c && c.icon ? { src: c.icon.src, w: c.icon.w, h: c.icon.h, x: c.icon.x, y: c.icon.y, zoom: c.icon.zoom } : null,
+        confirmDelete: false
+      };
+      renderCharForm();
+    }
+    function readFormFields() {
+      if (!form) return;
+      var g = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+      if (document.getElementById('f-name')) form.name = g('f-name');
+      if (document.getElementById('f-family')) form.family = g('f-family');
+      if (document.getElementById('f-given')) form.given = g('f-given');
+      if (document.getElementById('f-furigana')) form.furigana = g('f-furigana');
+      if (document.getElementById('f-cat')) form.categoryId = g('f-cat') || null;
+      if (document.getElementById('f-memo')) form.memo = g('f-memo');
+    }
+    function formHeadName() {
+      if (form.nameStyle === 'single') return form.name.trim();
+      return form.given.trim() || form.family.trim();
+    }
+    function formFullName() {
+      if (form.nameStyle === 'jp') return (form.family + ' ' + form.given).trim();
+      if (form.nameStyle === 'en') return (form.given + ' ' + form.family).trim();
+      return form.name.trim();
+    }
+    function renderCharForm() {
+      var isEdit = !!form.id;
+      var c = isEdit ? findChar(form.id) : null;
+      var h = sheetHead(isEdit ? 'キャラクターを編集' : 'キャラクターを追加');
+      /* アイコン */
+      h += '<div class="field"><span class="flabel">アイコン</span><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+        '<span id="f-iconprev">' + formIconHTML() + '</span>' +
+        '<span style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button type="button" class="btn btn-small" onclick="formIconFromPhoto()">写真から選ぶ</button>' +
+        (c && (c.images || []).length ? '<button type="button" class="btn btn-small" onclick="formIconFromImages()">参考画像から選ぶ</button>' : '') +
+        (form.icon ? '<button type="button" class="btn btn-small" onclick="formIconAdjust()">位置を調整</button>' +
+                     '<button type="button" class="btn btn-small" onclick="formIconClear()">外す</button>' : '') +
+        '</span></div><p class="hint">未設定のときは、イメージカラーと名前の頭文字がアイコンになります。</p></div>';
+      /* 名前 */
+      h += '<div class="field"><span class="flabel">名前の形式</span><div class="segrow">' +
+        '<button type="button" class="' + (form.nameStyle === 'single' ? 'on' : '') + '" onclick="setNameStyle(\'single\')">分けない</button>' +
+        '<button type="button" class="' + (form.nameStyle === 'jp' ? 'on' : '') + '" onclick="setNameStyle(\'jp\')">和名（苗字＋名前）</button>' +
+        '<button type="button" class="' + (form.nameStyle === 'en' ? 'on' : '') + '" onclick="setNameStyle(\'en\')">英名（ファミリー＋ファースト）</button></div></div>';
+      if (form.nameStyle === 'single') {
+        h += '<div class="field"><label for="f-name">名前</label><input type="text" id="f-name" value="' + esc(form.name) + '" placeholder="キャラクターの名前" oninput="updateNamePreview()"></div>';
+      } else if (form.nameStyle === 'jp') {
+        h += '<div class="fieldrow"><div class="field"><label for="f-family">苗字</label><input type="text" id="f-family" value="' + esc(form.family) + '" oninput="updateNamePreview()"></div>' +
+          '<div class="field"><label for="f-given">名前</label><input type="text" id="f-given" value="' + esc(form.given) + '" oninput="updateNamePreview()"></div></div>';
+      } else {
+        h += '<div class="fieldrow"><div class="field"><label for="f-family">ファミリーネーム</label><input type="text" id="f-family" value="' + esc(form.family) + '" oninput="updateNamePreview()"></div>' +
+          '<div class="field"><label for="f-given">ファーストネーム</label><input type="text" id="f-given" value="' + esc(form.given) + '" oninput="updateNamePreview()"></div></div>';
+      }
+      h += '<div class="field"><div class="namepreview" id="name-preview"></div></div>';
+      h += '<div class="field"><label for="f-furigana">フリガナ <span style="color:var(--ink2);font-weight:400">（任意）</span></label>' +
+        '<input type="text" id="f-furigana" value="' + esc(form.furigana) + '" placeholder="名前の上に小さく表示され、検索でも探せます"></div>';
+      /* 区分 */
+      h += '<div class="field"><label for="f-cat">区分</label><select id="f-cat">' +
+        state.categories.map(function (cat) {
+          return '<option value="' + cat.id + '"' + (form.categoryId === cat.id ? ' selected' : '') + '>' + esc(cat.name) + '</option>';
+        }).join('') + '<option value=""' + (!form.categoryId ? ' selected' : '') + '>未分類</option></select></div>';
+      /* イメージカラー */
+      h += '<div class="field"><span class="flabel">イメージカラー</span><div class="colorrow">' +
+        '<input type="color" id="f-color" value="' + esc(form.color) + '" aria-label="色を円から選ぶ">' +
+        '<input type="text" class="hexinput" id="f-hex" value="' + esc(form.color) + '" maxlength="7" aria-label="カラーコード">' +
+        '<button type="button" class="btn btn-small" onclick="formComplement()">反対色にする</button></div>' +
+        '<div class="presetrow">' + PRESETS.map(function (p) {
+          return '<span class="presetwrap"><button type="button" class="preset' + (form.color === p.c ? ' on' : '') + '" style="background:' + p.c + '" onclick="formSetColor(\'' + p.c + '\')" aria-label="' + p.n + '"></button><span class="presetname">' + p.n + '</span></span>';
+        }).join('') + '</div>' +
+        ((state.recentColors || []).length ? '<p class="hint" style="margin-top:8px">最近使用した色</p><div class="presetrow">' +
+          state.recentColors.map(function (rc) {
+            return '<button type="button" class="preset' + (form.color === rc ? ' on' : '') + '" style="background:' + rc + '" onclick="formSetColor(\'' + rc + '\')" aria-label="' + rc + '"></button>';
+          }).join('') + '</div>' : '') +
+        '<p class="hint">色の円から選ぶか、#からはじまるカラーコードでも指定できます。</p></div>';
+      /* タグ */
+      h += '<div class="field"><span class="flabel">タグ <span style="color:var(--ink2);font-weight:400">（区分とは別の、自由な目印です）</span></span>' +
+        '<div class="tagedit" id="f-tags">' + form.tags.map(function (t, i) {
+          return '<span class="tagchip">#' + esc(t) + '<button type="button" onclick="formRemoveTag(' + i + ')" aria-label="タグを外す">✕</button></span>';
+        }).join('') + '</div>' +
+        '<div class="fieldrow"><input type="text" id="f-taginput" placeholder="タグ名を入力" style="border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;min-height:42px;background:var(--surface)">' +
+        '<button type="button" class="btn" style="flex:none" onclick="formAddTag()">追加</button></div>';
+      var sugg = allTags().filter(function (t) { return form.tags.indexOf(t.name) < 0; });
+      if (sugg.length) {
+        h += '<p class="hint">使われているタグ（タップで追加）</p><div class="tagedit">' +
+          sugg.map(function (t) { return '<button type="button" class="tagchip" onclick="formAddTagName(\'' + esc(t.name) + '\')">#' + esc(t.name) + '</button>'; }).join('') + '</div>';
+      }
+      h += '<p class="hint">タグは1人30個まで付けられます。</p></div>';
+      /* メモ */
+      h += '<div class="field"><label for="f-memo">メモ</label><textarea id="f-memo" placeholder="設定メモなど、自由にどうぞ">' + esc(form.memo) + '</textarea></div>';
+      if (form.confirmDelete) {
+        h += '<div class="memobox" style="border-color:var(--danger)"><p style="margin:0 0 10px"><b>本当に削除しますか？</b><br>このキャラクターのプロンプト・参考画像・関係性など、すべて消えます。元に戻せません。</p>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-danger" onclick="doDeleteChar()">削除する</button>' +
+          '<button type="button" class="btn" onclick="cancelDeleteChar()">やめておく</button></div></div>';
+      }
+      h += '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button>' +
+        (isEdit && !form.confirmDelete ? '<button type="button" class="btn btn-danger" onclick="askDeleteChar()">このキャラクターを削除</button>' : '') +
+        '<span class="spacer"></span><button type="button" class="btn btn-primary" onclick="saveCharForm()">' + (isEdit ? '保存する' : '追加する') + '</button></div>';
+      openSheet(h);
+      /* 色まわりの連動（入力欄そのものは書き戻さない） */
+      var colorEl = document.getElementById('f-color'), hexEl = document.getElementById('f-hex');
+      colorEl.addEventListener('input', function () { formSetColor(colorEl.value, true); });
+      hexEl.addEventListener('change', function () {
+        var v = hexEl.value.trim(); if (v.charAt(0) !== '#') v = '#' + v;
+        if (/^#[0-9a-f]{6}$/i.test(v)) formSetColor(v.toLowerCase()); else { hexEl.value = form.color; toast('カラーコードは # のあとに6文字で入力してください'); }
+      });
+      var tagInput = document.getElementById('f-taginput');
+      tagInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); formAddTag(); } });
+      updateNamePreview();
+    }
+    function formIconHTML() {
+      if (form.icon) {
+        return '<span class="cropframe iconframe" style="display:inline-block;width:64px;height:64px"><img alt="" src="' + form.icon.src +
+          '" data-nw="' + form.icon.w + '" data-nh="' + form.icon.h + '" data-x="' + form.icon.x + '" data-y="' + form.icon.y + '" data-zoom="' + form.icon.zoom + '"></span>';
+      }
+      var nm = formHeadName() || '？';
+      return '<span class="iconinitial" style="display:inline-flex;width:64px;height:64px;background:' + esc(form.color) + ';font-size:30px">' + esc(nm.charAt(0)) + '</span>';
+    }
+    function refreshIconPrev() { var el = document.getElementById('f-iconprev'); if (el) { el.innerHTML = formIconHTML(); layoutCrops(); } }
+    function setNameStyle(style) { readFormFields(); form.nameStyle = style; renderCharForm(); }
+    function updateNamePreview() {
+      readFormFields();
+      var el = document.getElementById('name-preview'); if (!el) return;
+      var head = formHeadName(), full = formFullName();
+      el.innerHTML = head
+        ? '一覧の見出し：<b>' + esc(head) + '</b>' + (full && full !== head ? '<br>フルネーム：' + esc(full) : '')
+        : '名前を入力すると、ここに表示のされ方が出ます';
+      refreshIconPrev();
+    }
+    function formSetColor(color, fromPicker) {
+      form.color = color;
+      var colorEl = document.getElementById('f-color'), hexEl = document.getElementById('f-hex');
+      if (colorEl && !fromPicker) colorEl.value = color;
+      if (hexEl) hexEl.value = color;
+      document.querySelectorAll('.preset').forEach(function (p) { p.classList.toggle('on', p.style.background && rgbToHex(p.style.background) === color); });
+      refreshIconPrev();
+    }
+    function rgbToHex(rgb) {
+      var m = /(\d+),\s*(\d+),\s*(\d+)/.exec(rgb || '');
+      if (!m) return rgb;
+      function h(v) { return ('0' + (+v).toString(16)).slice(-2); }
+      return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+    }
+    function formComplement() { readFormFields(); formSetColor(complement(form.color)); }
+    function cleanTag(t) { return (t || '').replace(/^#+/, '').replace(/['"\\<>]/g, '').trim().slice(0, 30); }
+    function formAddTag() {
+      var input = document.getElementById('f-taginput');
+      var t = cleanTag(input ? input.value : '');
+      if (!t) return;
+      if (form.tags.length >= 30) { toast('タグは1人30個までです'); return; }
+      if (form.tags.indexOf(t) >= 0) { toast('そのタグはもう付いています'); return; }
+      readFormFields(); form.tags.push(t); renderCharForm();
+    }
+    function formAddTagName(t) {
+      t = cleanTag(t);
+      if (!t || form.tags.indexOf(t) >= 0) return;
+      if (form.tags.length >= 30) { toast('タグは1人30個までです'); return; }
+      readFormFields(); form.tags.push(t); renderCharForm();
+    }
+    function formRemoveTag(i) { readFormFields(); form.tags.splice(i, 1); renderCharForm(); }
+    function formIconFromPhoto() { readFormFields(); document.getElementById('file-icon').click(); }
+    document.getElementById('file-icon').addEventListener('change', function (e) {
+      var f = (e.target.files || [])[0]; e.target.value = '';
+      if (!f || !form) return;
+      processImageFile(f, function (rec) {
+        openCrop(rec.src, rec.w, rec.h, '1 / 1', null, function (crop) { form.icon = crop; renderCharForm(); });
+      });
+    });
+    function formIconFromImages() {
+      readFormFields();
+      var c = findChar(form.id); if (!c) return;
+      var h = sheetHead('参考画像からアイコンを選ぶ') + '<div class="imggrid">' +
+        (c.images || []).map(function (img) {
+          return '<button type="button" class="imgthumb" onclick="formIconPick(\'' + img.id + '\')"><img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '"></button>';
+        }).join('') + '</div><div class="form-actions"><button type="button" class="btn" onclick="renderCharForm()">戻る</button></div>';
+      openSheet(h);
+    }
+    function formIconPick(imgId) {
+      var c = findChar(form.id); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      openCrop(img.src, img.w, img.h, '1 / 1', null, function (crop) { form.icon = crop; renderCharForm(); });
+    }
+    function formIconAdjust() {
+      if (!form.icon) return;
+      readFormFields();
+      openCrop(form.icon.src, form.icon.w, form.icon.h, '1 / 1', form.icon, function (crop) { form.icon = crop; renderCharForm(); });
+    }
+    function formIconClear() { readFormFields(); form.icon = null; renderCharForm(); }
+    function askDeleteChar() { readFormFields(); form.confirmDelete = true; renderCharForm(); }
+    function cancelDeleteChar() { form.confirmDelete = false; renderCharForm(); }
+    function doDeleteChar() {
+      var id = form.id;
+      state.characters = state.characters.filter(function (c) { return c.id !== id; });
+      state.characters.forEach(function (c) {
+        c.relationships = (c.relationships || []).filter(function (r) { return r.otherId !== id; });
+      });
+      save(); form = null; closeSheet(); backList(); toast('キャラクターを削除しました');
+    }
+    function saveCharForm() {
+      readFormFields();
+      if (!formHeadName()) { toast('名前を入力してください'); return; }
+      pushRecent(form.color);
+      var data = {
+        nameStyle: form.nameStyle, name: form.name.trim(), family: form.family.trim(), given: form.given.trim(),
+        furigana: form.furigana.trim(), categoryId: form.categoryId || null, color: form.color,
+        tags: form.tags.slice(), memo: form.memo, icon: form.icon
+      };
+      var target;
+      if (form.id) {
+        target = findChar(form.id); if (!target) { closeSheet(); return; }
+        Object.keys(data).forEach(function (k) { target[k] = data[k]; });
+        save(); closeSheet(); render(); toast('保存しました');
+      } else {
+        target = Object.assign({
+          id: uid(), images: [], headerImgId: null, headerCrop: { x: .5, y: .5, zoom: 1 },
+          prompts: [], links: [], secrets: [], relationships: []
+        }, data);
+        state.characters.push(target);
+        save(); closeSheet(); goChar(target.id); toast('キャラクターを追加しました');
+      }
+    }
+    </script>
+    <script>
+    /* ================= プロンプト / リンク / 秘匿情報フォーム ================= */
+    function openPromptForm(pid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var p = pid ? (c.prompts || []).find(function (x) { return x.id === pid; }) : null;
+      openSheet(sheetHead(p ? 'プロンプトを編集' : 'プロンプトを追加') +
+        '<div class="field"><label for="pf-title">タイトル</label><input type="text" id="pf-title" value="' + esc(p ? p.title : '') + '" placeholder="例：基本の見た目"></div>' +
+        '<div class="field"><label for="pf-body">本文</label><textarea id="pf-body" style="min-height:150px" placeholder="コピーして使いたい文章をそのまま貼り付けられます">' + esc(p ? p.body : '') + '</textarea></div>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="savePromptForm(\'' + (pid || '') + '\')">保存する</button></div>');
+      document.getElementById('pf-title').focus();
+    }
+    function savePromptForm(pid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var title = document.getElementById('pf-title').value.trim();
+      var body = document.getElementById('pf-body').value;
+      if (!body.trim()) { toast('本文を入力してください'); return; }
+      c.prompts = c.prompts || [];
+      if (pid) { var p = c.prompts.find(function (x) { return x.id === pid; }); if (p) { p.title = title; p.body = body; } }
+      else c.prompts.push({ id: uid(), title: title, body: body });
+      save(); closeSheet(); render(); toast('プロンプトを保存しました');
+    }
+    function deletePrompt(pid) {
+      var c = findChar(ui.charId); if (!c) return;
+      askConfirm('プロンプトを削除しますか？', 'このプロンプトを削除します。元に戻せません。', '削除する', function () {
+        c.prompts = (c.prompts || []).filter(function (x) { return x.id !== pid; });
+        save(); render(); toast('プロンプトを削除しました');
+      }, true);
+    }
+    function openLinkForm(lid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var l = lid ? (c.links || []).find(function (x) { return x.id === lid; }) : null;
+      openSheet(sheetHead(l ? 'リンクを編集' : 'リンクを追加') +
+        '<div class="field"><label for="lf-label">表示名</label><input type="text" id="lf-label" value="' + esc(l ? l.label : '') + '" placeholder="例：設定資料のページ"></div>' +
+        '<div class="field"><label for="lf-url">URL</label><input type="url" id="lf-url" value="' + esc(l ? l.url : '') + '" placeholder="https://…"></div>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="saveLinkForm(\'' + (lid || '') + '\')">保存する</button></div>');
+    }
+    function saveLinkForm(lid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var label = document.getElementById('lf-label').value.trim();
+      var url = document.getElementById('lf-url').value.trim();
+      if (!url) { toast('URLを入力してください'); return; }
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+      c.links = c.links || [];
+      if (lid) { var l = c.links.find(function (x) { return x.id === lid; }); if (l) { l.label = label; l.url = url; } }
+      else c.links.push({ id: uid(), label: label, url: url });
+      save(); closeSheet(); render(); toast('リンクを保存しました');
+    }
+    function deleteLink(lid) {
+      var c = findChar(ui.charId); if (!c) return;
+      askConfirm('リンクを削除しますか？', 'このリンクを削除します。元に戻せません。', '削除する', function () {
+        c.links = (c.links || []).filter(function (x) { return x.id !== lid; });
+        save(); render(); toast('リンクを削除しました');
+      }, true);
+    }
+    function openSecretForm(sid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var s = sid ? (c.secrets || []).find(function (x) { return x.id === sid; }) : null;
+      openSheet(sheetHead(s ? '秘匿情報を編集' : '秘匿情報を追加') +
+        '<div class="field"><label for="sf-label">ラベル</label><input type="text" id="sf-label" value="' + esc(s ? s.label : '') + '" placeholder="例：本当の正体"></div>' +
+        '<div class="field"><label for="sf-body">内容</label><textarea id="sf-body" style="min-height:130px">' + esc(s ? s.body : '') + '</textarea></div>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="saveSecretForm(\'' + (sid || '') + '\')">保存する</button></div>');
+    }
+    function saveSecretForm(sid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var label = document.getElementById('sf-label').value.trim();
+      var body = document.getElementById('sf-body').value;
+      if (!body.trim() && !label) { toast('内容を入力してください'); return; }
+      c.secrets = c.secrets || [];
+      if (sid) { var s = c.secrets.find(function (x) { return x.id === sid; }); if (s) { s.label = label; s.body = body; } }
+      else c.secrets.push({ id: uid(), label: label, body: body });
+      save(); closeSheet(); render(); toast('秘匿情報を保存しました');
+    }
+    function deleteSecret(sid) {
+      var c = findChar(ui.charId); if (!c) return;
+      askConfirm('秘匿情報を削除しますか？', 'この秘匿情報を削除します。元に戻せません。', '削除する', function () {
+        c.secrets = (c.secrets || []).filter(function (x) { return x.id !== sid; });
+        save(); render(); toast('秘匿情報を削除しました');
+      }, true);
+    }
+
+    /* ================= 関係性フォーム ================= */
+    function openRelForm(rid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var r = rid ? (c.relationships || []).find(function (x) { return x.rid === rid; }) : null;
+      var others = state.characters.filter(function (o) {
+        if (o.id === c.id) return false;
+        if (!r && (c.relationships || []).some(function (x) { return x.otherId === o.id; })) return false;
+        return true;
+      });
+      if (!r && !others.length) { toast('関係性を付けられる相手がまだいません'); return; }
+      var otherName = r ? (findChar(r.otherId) ? headName(findChar(r.otherId)) : '相手') : '';
+      var h = sheetHead(r ? '関係性を編集' : '関係性を追加');
+      if (r) {
+        h += '<div class="field"><span class="flabel">相手</span><div class="namepreview">' + esc(otherName) + '</div></div>';
+      } else {
+        h += '<div class="field"><label for="rf-other">相手のキャラクター</label><select id="rf-other">' +
+          others.map(function (o) { return '<option value="' + o.id + '">' + esc(headName(o)) + '</option>'; }).join('') + '</select></div>';
+      }
+      h += '<div class="field"><label for="rf-label">関係性の名前</label><input type="text" id="rf-label" value="' + esc(r ? r.label : '') + '" placeholder="例：幼なじみ、ライバル、主従など"></div>' +
+        '<div class="field"><label for="rf-memo">関係性のメモ</label><textarea id="rf-memo" placeholder="出会いやエピソードなど">' + esc(r ? r.memo : '') + '</textarea></div>' +
+        '<div class="field"><label for="rf-to">' + esc(headName(c)) + ' → 相手 への気持ち</label><textarea id="rf-to" placeholder="' + esc(headName(c)) + 'から見た気持ち">' + esc(r ? r.feelingsTo : '') + '</textarea></div>' +
+        '<div class="field"><label for="rf-from">相手 → ' + esc(headName(c)) + ' への気持ち</label><textarea id="rf-from" placeholder="相手から見た気持ち">' + esc(r ? r.feelingsFrom : '') + '</textarea></div>' +
+        '<p class="hint">相手のキャラクターのページにも、同じ関係性が自動で表示されます。</p>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">やめておく</button><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-primary" onclick="saveRelForm(\'' + (rid || '') + '\')">保存する</button></div>';
+      openSheet(h);
+    }
+    function saveRelForm(rid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var label = document.getElementById('rf-label').value.trim();
+      var memo = document.getElementById('rf-memo').value;
+      var to = document.getElementById('rf-to').value;
+      var from = document.getElementById('rf-from').value;
+      c.relationships = c.relationships || [];
+      if (rid) {
+        var r = c.relationships.find(function (x) { return x.rid === rid; }); if (!r) { closeSheet(); return; }
+        r.label = label; r.memo = memo; r.feelingsTo = to; r.feelingsFrom = from;
+        var o = findChar(r.otherId);
+        if (o) {
+          var m = (o.relationships || []).find(function (x) { return x.rid === rid; });
+          if (m) { m.label = label; m.memo = memo; m.feelingsTo = from; m.feelingsFrom = to; }
+        }
+      } else {
+        var otherId = document.getElementById('rf-other').value;
+        var o2 = findChar(otherId); if (!o2) { closeSheet(); return; }
+        var newRid = uid();
+        c.relationships.push({ rid: newRid, otherId: otherId, label: label, memo: memo, feelingsTo: to, feelingsFrom: from });
+        o2.relationships = o2.relationships || [];
+        o2.relationships.push({ rid: newRid, otherId: c.id, label: label, memo: memo, feelingsTo: from, feelingsFrom: to });
+      }
+      save(); closeSheet(); render(); toast('関係性を保存しました');
+    }
+    function deleteRel(rid) {
+      var c = findChar(ui.charId); if (!c) return;
+      var r = (c.relationships || []).find(function (x) { return x.rid === rid; });
+      var o = r ? findChar(r.otherId) : null;
+      askConfirm('関係性を削除しますか？', '相手のページからも、この関係性が消えます。元に戻せません。', '削除する', function () {
+        c.relationships = (c.relationships || []).filter(function (x) { return x.rid !== rid; });
+        if (o) o.relationships = (o.relationships || []).filter(function (x) { return x.rid !== rid; });
+        save(); render(); toast('関係性を削除しました');
+      }, true);
+    }
+
+    /* ================= 区分の管理 ================= */
+    function openCatManager() {
+      var h = sheetHead('区分を管理');
+      h += '<h3>区分の一覧</h3>';
+      state.categories.forEach(function (cat) {
+        var n = state.characters.filter(function (c) { return c.categoryId === cat.id; }).length;
+        h += '<div class="catrow"><input type="text" id="cat-' + cat.id + '" value="' + esc(cat.name) + '" aria-label="区分名">' +
+          '<span style="font-size:12px;color:var(--ink2);white-space:nowrap">' + n + '人</span>' +
+          '<button type="button" class="btn btn-small" onclick="renameCat(\'' + cat.id + '\')">名前を変更</button>' +
+          '<button type="button" class="btn btn-small btn-danger" onclick="deleteCat(\'' + cat.id + '\')">削除</button></div>';
+      });
+      h += '<h3>区分を追加</h3><div class="catrow"><input type="text" id="cat-new" placeholder="新しい区分の名前">' +
+        '<button type="button" class="btn btn-primary btn-small" onclick="addCat()">追加</button></div>';
+      if (state.categories.length > 1 && state.characters.length) {
+        h += '<h3>キャラクターをまとめて移動</h3>' +
+          '<div class="fieldrow"><div class="field"><label for="mv-from">移動元の区分</label><select id="mv-from">' +
+          state.categories.map(function (cat) { return '<option value="' + cat.id + '">' + esc(cat.name) + '</option>'; }).join('') + '</select></div>' +
+          '<div class="field"><label for="mv-to">移動先の区分</label><select id="mv-to">' +
+          state.categories.map(function (cat) { return '<option value="' + cat.id + '">' + esc(cat.name) + '</option>'; }).join('') + '</select></div></div>' +
+          '<button type="button" class="btn" onclick="bulkMove()">まとめて移動する</button>';
+      }
+      h += '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">閉じる</button></div>';
+      openSheet(h);
+    }
+    function renameCat(id) {
+      var input = document.getElementById('cat-' + id);
+      var v = input.value.trim(); if (!v) { toast('区分の名前を入力してください'); return; }
+      var cat = state.categories.find(function (x) { return x.id === id; }); if (!cat) return;
+      cat.name = v; save(); openCatManager(); render(); toast('区分の名前を変更しました');
+    }
+    function addCat() {
+      var input = document.getElementById('cat-new');
+      var v = input.value.trim(); if (!v) { toast('区分の名前を入力してください'); return; }
+      state.categories.push({ id: uid(), name: v });
+      save(); openCatManager(); render(); toast('区分を追加しました');
+    }
+    function deleteCat(id) {
+      var cat = state.categories.find(function (x) { return x.id === id; }); if (!cat) return;
+      var n = state.characters.filter(function (c) { return c.categoryId === id; }).length;
+      askConfirm('区分を削除しますか？', '区分「' + cat.name + '」を削除します。' + (n ? '\nこの区分のキャラクター' + n + '人は「未分類」になります。' : ''), '削除する', function () {
+        state.categories = state.categories.filter(function (x) { return x.id !== id; });
+        state.characters.forEach(function (c) { if (c.categoryId === id) c.categoryId = null; });
+        if (ui.catFilter === id) ui.catFilter = 'all';
+        save(); openCatManager(); render(); toast('区分を削除しました');
+      }, true);
+    }
+    function bulkMove() {
+      var from = document.getElementById('mv-from').value, to = document.getElementById('mv-to').value;
+      if (from === to) { toast('移動元と移動先が同じです'); return; }
+      var n = 0;
+      state.characters.forEach(function (c) { if (c.categoryId === from) { c.categoryId = to; n++; } });
+      save(); openCatManager(); render(); toast(n + '人を移動しました');
+    }
+
+    /* ================= デザイン選択 ================= */
+    function openDesignPicker() {
+      var h = sheetHead('🎨 デザインを選ぶ') + '<p style="font-size:13.5px;color:var(--ink2);margin:0 0 12px">まわりの枠の雰囲気が変わります。写真・アイコン・イメージカラーは、どのデザインでも元の色のまま表示されます。</p>';
+      DESIGNS.forEach(function (d) {
+        h += '<button type="button" class="designcard' + (state.design === d.id ? ' on' : '') + '" onclick="pickDesign(\'' + d.id + '\')">' +
+          '<span class="designswatch" style="background:' + d.sw + '"></span>' +
+          '<span><b>' + esc(d.name) + '</b><br><span style="font-size:13px;color:var(--ink2)">' + esc(d.desc) + '</span></span></button>';
+      });
+      h += '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">閉じる</button></div>';
+      openSheet(h);
+      sheetEl.scrollIntoView({ block: 'nearest' });
+    }
+    function pickDesign(id) {
+      state.design = id; save(); closeSheet(); render();
+      var d = DESIGNS.find(function (x) { return x.id === id; });
+      toast('デザインを「' + (d ? d.name : id) + '」にしました');
+    }
+
+    /* ================= データ管理 ================= */
+    function openDataMenu() {
+      var size = 0;
+      try { size = (localStorage.getItem(LS_KEY) || '').length; } catch (e) {}
+      var h = sheetHead('データ') +
+        '<p style="font-size:14px">このページのデータは、このブラウザの中に保存されています。閉じても残りますが、ブラウザのデータを消すと一緒に消えてしまいます。大事なデータは、ときどき書き出して控えを取っておくのがおすすめです。</p>' +
+        '<p style="font-size:13px;color:var(--ink2)">現在のデータ量の目安：約 ' + Math.max(1, Math.round(size / 1024)) + ' KB</p>' +
+        '<h3>控えを取る・戻す</h3>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button type="button" class="btn" onclick="exportData()">データを書き出す（JSON）</button>' +
+        '<button type="button" class="btn" onclick="document.getElementById(\'file-import\').click()">書き出したデータを読み込む</button></div>' +
+        '<p class="hint" style="font-size:12px;color:var(--ink2)">読み込むと、今のデータは読み込んだ内容に置き換わります。</p>' +
+        '<h3>このページ自体を保存</h3>' +
+        '<p style="font-size:14px">このページをHTMLファイルとして保存できます。保存したファイルは、ブラウザで開くだけで同じように使えます（データは開いた人のブラウザに保存されます）。</p>' +
+        '<button type="button" class="btn" onclick="downloadSelf()">HTMLファイルとして保存する</button>' +
+        '<h3>すべて消す</h3>' +
+        '<button type="button" class="btn btn-danger" onclick="askWipe()">すべてのデータを削除</button>' +
+        '<div class="form-actions"><button type="button" class="btn" onclick="closeSheet()">閉じる</button></div>';
+      openSheet(h);
+    }
+    function downloadBlob(blob, filename) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 400);
+    }
+    function exportData() {
+      downloadBlob(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), 'uchinoko-matome-data.json');
+      toast('データを書き出しました');
+    }
+    document.getElementById('file-import').addEventListener('change', function (e) {
+      var f = (e.target.files || [])[0]; e.target.value = '';
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var s = JSON.parse(reader.result);
+          if (!s || !Array.isArray(s.characters) || !Array.isArray(s.categories)) throw new Error('bad');
+          askConfirm('データを読み込みますか？', '今のデータは、読み込んだ内容に置き換わります。よろしいですか？', '読み込む', function () {
+            state = s; save(); ui.view = 'list'; ui.charId = null; ui.tagFilter = null; ui.catFilter = 'all';
+            render(); toast('データを読み込みました');
+          });
+        } catch (err) { toast('そのファイルは読み込めませんでした'); }
+      };
+      reader.readAsText(f);
+    });
+    function downloadSelf() {
+      var html = '<!doctype html>\n' + document.documentElement.outerHTML;
+      downloadBlob(new Blob([html], { type: 'text/html' }), 'uchinoko-matome.html');
+      toast('HTMLファイルを保存しました');
+    }
+    function askWipe() {
+      askConfirm('すべてのデータを削除しますか？', 'キャラクター・区分・設定のすべてが消えます。元に戻せません。', 'すべて削除する', function () {
+        state = defaultState(); save();
+        ui.view = 'list'; ui.charId = null; ui.unlocked = {}; ui.tagFilter = null; ui.catFilter = 'all'; ui.query = '';
+        render(); toast('すべてのデータを削除しました');
+      }, true);
+    }
+
+    /* ================= ヘルプ ================= */
+    function openHelp() {
+      openSheet(sheetHead('？ ヘルプ') + '<div class="helpbody">' +
+        '<h3>このページについて</h3>' +
+        '<p>自分の創作キャラクターや代理キャラクターを、1人ずつまとめておくためのページです。データはこのブラウザの中に保存されるので、閉じても残ります。お友達に渡すときは、「データ」の画面からHTMLファイルとして保存して渡してください（データは開いた人のブラウザに、その人専用で保存されます）。</p>' +
+        '<h3>キャラクター</h3>' +
+        '<p>「＋ キャラクターを追加」から登録できます。名前は「分けない／和名（苗字＋名前）／英名（ファミリー＋ファースト）」の3形式から選べます。分けて入力すると、名前（和名）やファーストネーム（英名）が一覧の見出しになります。フリガナは任意で、名前の上に表示され、検索でも探せます。</p>' +
+        '<h3>区分とタグ</h3>' +
+        '<p>区分は大きな分類です。「区分を管理」から追加・名前変更・削除ができ、キャラクターをまとめて別の区分へ移すこともできます。タグは区分とは別に自由に付けられる目印で、一覧でタップすると絞り込めます。</p>' +
+        '<h3>イメージカラー</h3>' +
+        '<p>色の円（カラーピッカー）から選ぶか、#からはじまるカラーコードで指定できます。「最近使用した色」や「反対色にする」も使えます。アイコン未設定のときの丸や、ヘッダー画像がないときの背景に使われます。</p>' +
+        '<h3>参考画像とヘッダー・アイコン</h3>' +
+        '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。</p>' +
+        '<h3>プロンプト</h3>' +
+        '<p>タイトルと本文をセットで何件でも登録でき、「コピー」ボタンで本文をそのままコピーできます。</p>' +
+        '<h3>関係性</h3>' +
+        '<p>ほかのキャラクターとの関係を登録できます。相手のページにも自動で表示されます。お互いへの気持ちも、向きごとに書けます。</p>' +
+        '<h3>🔒 秘匿情報</h3>' +
+        '<p>人に見せたくない設定はここに分けて書けます。開くときに確認が入り、プレビュー中は表示されません。</p>' +
+        '<h3>並べ替え・畳む</h3>' +
+        '<p>各セクションの「⇅ 並べ替え」で、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
+        '<h3>デザイン</h3>' +
+        '<p>「🎨 デザイン」から、シック・かわいい・ポップ・ナチュラル・ゴージャスの5種類を選べます。変わるのはまわりの枠だけで、写真やアイコン、イメージカラーは元の色のままです。</p>' +
+        '<h3>プレビュー</h3>' +
+        '<p>「👁 プレビュー」は見るだけの表示です。編集ボタンが隠れるので、人に見せるときや、仕上がりの確認に使えます。</p>' +
+        '<h3>データの控え</h3>' +
+        '<p>「データ」の画面から、データをJSONファイルに書き出したり、読み込んだりできます。ブラウザのデータを消すと中身も消えてしまうので、大事なときは控えを取っておいてください。</p>' +
+        '<div class="form-actions"><button type="button" class="btn btn-primary" onclick="closeSheet()">閉じる</button></div></div>');
+    }
+
+    /* ================= 初期表示 ================= */
+    render();
+    </script>
+  </body>
+</html>
