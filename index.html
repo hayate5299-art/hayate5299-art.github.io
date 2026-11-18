@@ -327,7 +327,7 @@
     /* 画面だけの状態（保存しない） */
     var ui = {
       view: 'list', charId: null, catFilter: 'all', tagFilter: null, query: '',
-      preview: false, unlocked: {}, collapsed: {}, reorderKey: null, expanded: {}
+      preview: false, unlocked: {}, collapsed: {}, reorderKey: null, expanded: {}, sectionReorder: false
     };
 
     /* ================= 共通ヘルパー ================= */
@@ -445,8 +445,8 @@
       else { ui.view = 'list'; renderList(); }
       layoutCrops();
     }
-    function goChar(id) { ui.view = 'char'; ui.charId = id; ui.reorderKey = null; window.scrollTo(0, 0); render(); }
-    function backList() { ui.view = 'list'; ui.charId = null; render(); }
+    function goChar(id) { ui.view = 'char'; ui.charId = id; ui.reorderKey = null; ui.sectionReorder = false; window.scrollTo(0, 0); render(); }
+    function backList() { ui.view = 'list'; ui.charId = null; ui.sectionReorder = false; render(); }
     function setCatFilter(id) { ui.catFilter = id; render(); }
     function setTagFilter(t) { ui.tagFilter = (ui.tagFilter === t) ? null : t; render(); }
     function onSearch(v) { ui.query = v; renderListBody(); layoutCrops(); }
@@ -549,12 +549,44 @@
     </script>
     <script>
     /* ================= キャラクターページ ================= */
+    var SECTION_KEYS = ['images', 'prompts', 'links', 'rels', 'secrets'];
+    function sectionOrder(c) {
+      var saved = Array.isArray(c.sectionOrder) ? c.sectionOrder.filter(function (k) { return SECTION_KEYS.indexOf(k) >= 0; }) : [];
+      SECTION_KEYS.forEach(function (k) { if (saved.indexOf(k) < 0) saved.push(k); });
+      return saved;
+    }
+    function toggleSectionReorder() {
+      ui.sectionReorder = !ui.sectionReorder;
+      if (ui.sectionReorder) ui.reorderKey = null;
+      render();
+    }
+    function moveSection(key, dir) {
+      var c = findChar(ui.charId); if (!c) return;
+      var order = sectionOrder(c);
+      var idx = order.indexOf(key); var j = idx + dir;
+      if (idx < 0 || j < 0 || j >= order.length) return;
+      var tmp = order[idx]; order[idx] = order[j]; order[j] = tmp;
+      c.sectionOrder = order;
+      save(); render();
+    }
     function sectionHTML(c, key, title, count, bodyHTML, toolsHTML) {
       var ck = c.id + ':' + key;
       var closed = !!ui.collapsed[ck];
-      var h = '<div class="section"><button type="button" class="section-head" onclick="toggleSection(\'' + ck + '\')">' +
-        '<h2>' + esc(title) + '</h2><span class="cnt">' + count + '</span>' +
-        '<span class="chev">' + (closed ? '▸' : '▾') + '</span></button>';
+      var h;
+      if (ui.sectionReorder && !ui.preview) {
+        var order = sectionOrder(c);
+        var idx = order.indexOf(key);
+        h = '<div class="section"><div class="section-head">' +
+          '<h2>' + esc(title) + '</h2><span class="cnt">' + count + '</span>' +
+          '<span class="movebtns">' +
+          '<button type="button" class="btn btn-small" ' + (idx === 0 ? 'disabled' : '') + ' onclick="moveSection(\'' + key + '\',-1)" aria-label="「' + esc(title) + '」を上へ移動">↑</button>' +
+          '<button type="button" class="btn btn-small" ' + (idx === order.length - 1 ? 'disabled' : '') + ' onclick="moveSection(\'' + key + '\',1)" aria-label="「' + esc(title) + '」を下へ移動">↓</button></span>' +
+          '<button type="button" class="btn btn-ghost btn-small" onclick="toggleSection(\'' + ck + '\')" aria-label="開いたり畳んだり">' + (closed ? '▸' : '▾') + '</button></div>';
+      } else {
+        h = '<div class="section"><button type="button" class="section-head" onclick="toggleSection(\'' + ck + '\')">' +
+          '<h2>' + esc(title) + '</h2><span class="cnt">' + count + '</span>' +
+          '<span class="chev">' + (closed ? '▸' : '▾') + '</span></button>';
+      }
       if (!closed) {
         h += '<div class="section-body">' + (toolsHTML || '') + bodyHTML + '</div>';
       }
@@ -562,7 +594,7 @@
     }
     function toggleSection(ck) { ui.collapsed[ck] = !ui.collapsed[ck]; render(); }
     function toggleAllSections(id, close) {
-      ['images', 'prompts', 'links', 'rels', 'secrets'].forEach(function (k) { ui.collapsed[id + ':' + k] = close; });
+      SECTION_KEYS.forEach(function (k) { ui.collapsed[id + ':' + k] = close; });
       render();
     }
     function reorderTools(key) {
@@ -621,7 +653,9 @@
       }
       if (c.memo) h += '<div class="memobox">' + longTextHTML(c.memo, c.id + ':memo') + '</div>';
       h += '<div class="backrow"><button type="button" class="btn btn-small" onclick="toggleAllSections(\'' + c.id + '\',true)">すべて畳む</button>' +
-        '<button type="button" class="btn btn-small" onclick="toggleAllSections(\'' + c.id + '\',false)">すべて開く</button></div>';
+        '<button type="button" class="btn btn-small" onclick="toggleAllSections(\'' + c.id + '\',false)">すべて開く</button>' +
+        (ui.preview ? '' : '<button type="button" class="btn btn-small' + (ui.sectionReorder ? ' btn-primary' : '') + '" onclick="toggleSectionReorder()">' + (ui.sectionReorder ? '項目の並べ替えを終わる' : '⇅ 項目を並べ替える') + '</button>') + '</div>';
+      var secParts = {};
 
       /* 参考画像 */
       var imgTools = '';
@@ -643,7 +677,7 @@
         });
         imgBody += '</div>';
       }
-      h += sectionHTML(c, 'images', '参考画像', (c.images || []).length + '枚', imgBody, imgTools);
+      secParts['images'] = sectionHTML(c, 'images', '参考画像', (c.images || []).length + '枚', imgBody, imgTools);
 
       /* プロンプト */
       var prTools = '';
@@ -664,7 +698,7 @@
             '</span></div><div class="item-body">' + longTextHTML(p.body, c.id + ':pr:' + p.id) + '</div></div>';
         }).join('');
       }
-      h += sectionHTML(c, 'prompts', 'プロンプト', (c.prompts || []).length + '件', prBody, prTools);
+      secParts['prompts'] = sectionHTML(c, 'prompts', 'プロンプト', (c.prompts || []).length + '件', prBody, prTools);
 
       /* リンク */
       var lkTools = '';
@@ -684,7 +718,7 @@
             '</span></div><div style="font-size:12.5px;color:var(--ink2);word-break:break-all">' + esc(l.url) + '</div></div>';
         }).join('');
       }
-      h += sectionHTML(c, 'links', 'リンク', (c.links || []).length + '件', lkBody, lkTools);
+      secParts['links'] = sectionHTML(c, 'links', 'リンク', (c.links || []).length + '件', lkBody, lkTools);
 
       /* 関係性 */
       var relTools = '';
@@ -715,14 +749,14 @@
           return s + '</div>';
         }).join('');
       }
-      h += sectionHTML(c, 'rels', '関係性', (c.relationships || []).length + '件', relBody, relTools);
+      secParts['rels'] = sectionHTML(c, 'rels', '関係性', (c.relationships || []).length + '件', relBody, relTools);
 
       /* 秘匿情報 */
       var secBody;
       if (ui.preview || !ui.unlocked[c.id]) {
         secBody = '<div class="locked-note"><p>🔒 この中身は鍵がかかっています。</p>' +
           (ui.preview ? '' : '<button type="button" class="btn" onclick="askUnlock()">鍵を開けて表示</button>') + '</div>';
-        h += sectionHTML(c, 'secrets', '🔒 秘匿情報', '非表示', secBody, '');
+        secParts['secrets'] = sectionHTML(c, 'secrets', '🔒 秘匿情報', '非表示', secBody, '');
       } else {
         var secTools = '<div class="section-tools"><button type="button" class="btn btn-primary btn-small" onclick="openSecretForm(null)">＋ 秘匿情報を追加</button>' +
           '<button type="button" class="btn btn-small" onclick="lockSecrets()">鍵をかける</button></div>' +
@@ -738,8 +772,9 @@
               '<div class="item-body">' + longTextHTML(s.body, c.id + ':sec:' + s.id) + '</div></div>';
           }).join('');
         }
-        h += sectionHTML(c, 'secrets', '🔒 秘匿情報', (c.secrets || []).length + '件', secBody, secTools);
+        secParts['secrets'] = sectionHTML(c, 'secrets', '🔒 秘匿情報', (c.secrets || []).length + '件', secBody, secTools);
       }
+      sectionOrder(c).forEach(function (k) { h += secParts[k] || ''; });
       app.innerHTML = h;
     }
     function askUnlock() {
@@ -1447,7 +1482,7 @@
         '<h3>🔒 秘匿情報</h3>' +
         '<p>人に見せたくない設定はここに分けて書けます。開くときに確認が入り、プレビュー中は表示されません。</p>' +
         '<h3>並べ替え・畳む</h3>' +
-        '<p>各セクションの「⇅ 並べ替え」で、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
+        '<p>「⇅ 項目を並べ替える」を押すと、参考画像・プロンプト・リンク・関係性・🔒秘匿情報といった項目そのものの順番を、↑↓ボタンで入れ替えられます（キャラクターごとに保存されます）。各セクションの「⇅ 並べ替え」では、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
         '<h3>デザイン</h3>' +
         '<p>「🎨 デザイン」から、シック・かわいい・ポップ・ナチュラル・ゴージャスの5種類を選べます。変わるのはまわりの枠だけで、写真やアイコン、イメージカラーは元の色のままです。</p>' +
         '<h3>プレビュー</h3>' +
