@@ -309,12 +309,82 @@
         max-width: 92vw; text-align: center; box-shadow: 0 4px 18px rgba(0,0,0,.3);
       }
       #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      /* ---------- 読み込み中画面 ---------- */
+      #loader {
+        position: fixed; inset: 0; z-index: 200; background: var(--bg);
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity .5s ease, visibility .5s ease;
+      }
+      #loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+      .loader-inner { text-align: center; padding: 24px 20px; }
+      .loader-cat { display: inline-block; animation: loader-bob 1.6s ease-in-out infinite; }
+      .loader-cat .eye { transform-box: fill-box; transform-origin: center; animation: loader-blink 3.4s ease-in-out infinite; }
+      .loader-hearts { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+      .loader-hearts svg { animation: loader-hop 1.05s ease-in-out infinite; }
+      .loader-hearts svg:nth-child(2) { animation-delay: .16s; }
+      .loader-hearts svg:nth-child(3) { animation-delay: .32s; }
+      .loader-title {
+        font-family: "M PLUS Rounded 1c", var(--font-body); font-weight: 700;
+        font-size: 19px; color: var(--ink); margin: 14px 0 2px; letter-spacing: .06em;
+      }
+      .loader-title .ldot { display: inline-block; animation: loader-dot 1.2s ease-in-out infinite; }
+      .loader-title .ldot:nth-child(2) { animation-delay: .18s; }
+      .loader-title .ldot:nth-child(3) { animation-delay: .36s; }
+      .loader-sub { font-size: 13px; color: var(--ink2); margin: 0; }
+      .loader-bar {
+        width: 176px; height: 11px; margin: 18px auto 0; border-radius: 999px;
+        background: var(--surface2); border: 1px solid var(--line); overflow: hidden;
+      }
+      .loader-bar i {
+        display: block; height: 100%; width: 42%; border-radius: 999px;
+        background: linear-gradient(90deg, #ef9dbd, #b79ce0, #8fc3e8);
+        animation: loader-bar 1.15s ease-in-out infinite;
+      }
+      @keyframes loader-bob { 0%, 100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-7px) rotate(1.2deg); } }
+      @keyframes loader-hop { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-8px) scale(1.12); } }
+      @keyframes loader-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.08); } }
+      @keyframes loader-dot { 0%, 100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+      @keyframes loader-bar { 0% { transform: translateX(-115%); } 100% { transform: translateX(300%); } }
+      @media (prefers-reduced-motion: reduce) {
+        #loader, #loader * { animation: none !important; }
+        .loader-bar i { transform: none; width: 100%; opacity: .55; }
+      }
       body.preview .edit-only { display: none !important; }
       .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
   </head>
   <body>
+    <div id="loader" role="status" aria-label="読み込み中">
+      <div class="loader-inner">
+        <span class="loader-cat" aria-hidden="true">
+          <svg width="118" height="102" viewBox="0 0 120 102" role="img" aria-label="ねこ">
+            <path d="M30 36 L25 9 L55 21 Z" fill="#ffffff" stroke="#e5b7c6" stroke-width="3" stroke-linejoin="round" />
+            <path d="M90 36 L95 9 L65 21 Z" fill="#ffffff" stroke="#e5b7c6" stroke-width="3" stroke-linejoin="round" />
+            <path d="M33 30 L30 16 L47 23 Z" fill="#f6a8bf" />
+            <path d="M87 30 L90 16 L73 23 Z" fill="#f6a8bf" />
+            <ellipse cx="60" cy="60" rx="43" ry="35" fill="#ffffff" stroke="#e5b7c6" stroke-width="3" />
+            <ellipse class="eye" cx="44" cy="57" rx="4.4" ry="6" fill="#3a2b33" />
+            <ellipse class="eye" cx="76" cy="57" rx="4.4" ry="6" fill="#3a2b33" />
+            <ellipse cx="60" cy="68" rx="3.6" ry="2.6" fill="#ef7fa3" />
+            <path d="M51 75 Q55.5 79.5 60 75 Q64.5 79.5 69 75" fill="none" stroke="#3a2b33" stroke-width="2.4" stroke-linecap="round" />
+            <ellipse cx="33" cy="70" rx="7" ry="4.4" fill="#f6a8bf" opacity=".65" />
+            <ellipse cx="87" cy="70" rx="7" ry="4.4" fill="#f6a8bf" opacity=".65" />
+            <path d="M14 62 L28 65 M16 74 L29 72 M104 62 L92 65 M102 74 L91 72" stroke="#d9a3b5" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="loader-hearts" aria-hidden="true">
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#c2546e" /></svg>
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#7b6bb5" /></svg>
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#d29a3c" /></svg>
+        </div>
+        <p class="loader-title">読み込み中<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
+        <p class="loader-sub">うちの子たちを呼んでいます</p>
+        <div class="loader-bar" aria-hidden="true"><i></i></div>
+      </div>
+    </div>
+
     <div class="wrap" id="app"></div>
 
     <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -1713,6 +1783,18 @@
 
     /* ================= 初期表示 ================= */
     render();
+    /* 読み込み中画面：最低1秒ほど見せてから、ふわっと消します（固まったとき用の保険つき） */
+    (function () {
+      var loaderDone = false;
+      function hideLoader() {
+        if (loaderDone) return; loaderDone = true;
+        var l = document.getElementById('loader'); if (!l) return;
+        l.classList.add('done');
+        setTimeout(function () { if (l.parentNode) l.parentNode.removeChild(l); }, 650);
+      }
+      setTimeout(hideLoader, 1050);
+      setTimeout(hideLoader, 4000);
+    })();
     </script>
   </body>
 </html>
