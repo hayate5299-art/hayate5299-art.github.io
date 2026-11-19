@@ -217,8 +217,8 @@
       .prof-top > * { min-width: 0; }
       @media (min-width: 760px) { .prof-top { grid-template-columns: 1.35fr 1fr; align-items: start; } }
       .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--surface2); scrollbar-width: thin; }
-      .cslide { flex: 0 0 100%; scroll-snap-align: start; position: relative; cursor: pointer; }
-      .cslide img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+      .cslide { flex: 0 0 100%; scroll-snap-align: start; position: relative; cursor: pointer; aspect-ratio: 4 / 3; }
+      .cslide > img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
       .cslide .cap { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 12.5px; padding: 5px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .cslide .idx { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; }
       .c-noimg { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
@@ -1054,11 +1054,12 @@
       if ((c.images || []).length) {
         h += '<div class="carousel">' + c.images.map(function (img, i) {
           return '<div class="cslide" onclick="openViewer(\'' + img.id + '\')" role="button" tabindex="0" aria-label="参考画像を大きく見る">' +
-            '<img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '">' +
+            cropImgHTML(img, img.refCrop, 'fill') +
             '<span class="idx">' + (i + 1) + ' / ' + c.images.length + '</span>' +
             (img.caption ? '<span class="cap">' + esc(img.caption) + '</span>' : '') + '</div>';
         }).join('') + '</div>';
-        h += '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">タップすると大きく表示されます。</p>';
+        h += '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">タップすると大きく表示されます。' +
+          (ui.preview ? '' : '横長の画像が見切れるときは、大きく表示した画面の「プロフィール帳表示の位置を調整」から、見える範囲を切り抜けます。') + '</p>';
       } else {
         h += '<div class="carousel"><div class="cslide"><div class="c-noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div></div></div>' +
           '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">まだ参考画像がありません。</p>';
@@ -1277,6 +1278,7 @@
           '<button type="button" class="btn" onclick="editCaption()">キャプションを編集</button>' +
           (isHeader ? '<button type="button" class="btn" onclick="openHeaderCrop();">ヘッダーの位置を調整</button>'
                     : '<button type="button" class="btn" onclick="setHeader(\'' + img.id + '\')">ヘッダーにする</button>') +
+          '<button type="button" class="btn" onclick="openRefCrop(\'' + img.id + '\')">プロフィール帳表示の位置を調整</button>' +
           '<button type="button" class="btn" onclick="setIconFromImage(\'' + img.id + '\')">アイコンにする</button>' +
           '<button type="button" class="btn" onclick="setBothFromImage(\'' + img.id + '\')">★ ヘッダーとアイコンに両方する</button>' +
           '<button type="button" class="btn" onclick="setMiniFromImage(\'' + img.id + '\')">ミニキャラ画像にする</button>' +
@@ -1341,15 +1343,25 @@
         save(); closeSheet(); render(); toast('ヘッダーの位置を調整しました');
       });
     }
+    /* プロフィール帳表示での参考画像の見え方（切り抜き範囲）を調整します */
+    function openRefCrop(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      openCrop(img.src, img.w, img.h, '4 / 3', img.refCrop, function (crop) {
+        img.refCrop = { x: crop.x, y: crop.y, zoom: crop.zoom };
+        save(); closeSheet(); render(); toast('プロフィール帳表示の位置を調整しました');
+      });
+    }
 
     /* ================= 切り抜きエディタ ================= */
     var cropEd = null;
     function openCrop(src, w, h, aspect, init, onDone) {
       cropEd = { src: src, w: w || 1, h: h || 1, x: init ? init.x : .5, y: init ? init.y : .5, zoom: init ? init.zoom : 1, onDone: onDone };
-      var wide = aspect === '16 / 7';
-      openSheet(sheetHead(wide ? 'ヘッダーの位置を調整' : 'アイコンの位置を調整') +
+      var circle = aspect === '1 / 1';
+      var cropTitle = aspect === '16 / 7' ? 'ヘッダーの位置を調整' : (circle ? 'アイコンの位置を調整' : 'プロフィール帳表示の位置を調整');
+      openSheet(sheetHead(cropTitle) +
         '<p style="font-size:13.5px;color:var(--ink2);margin:0 0 10px">画像をドラッグして位置を動かし、スライダーで大きさを調整してください。枠の中が実際に表示される範囲です。</p>' +
-        '<div class="cropstage" id="cropstage" style="aspect-ratio:' + aspect + ';' + (wide ? 'width:100%' : 'width:min(320px,100%);border-radius:50%') + '">' +
+        '<div class="cropstage" id="cropstage" style="aspect-ratio:' + aspect + ';' + (circle ? 'width:min(320px,100%);border-radius:50%' : 'width:100%') + '">' +
         '<img id="cropimg" src="' + src + '" alt=""></div>' +
         '<div class="field" style="margin-top:12px"><label for="cropzoom">大きさ</label>' +
         '<input type="range" id="cropzoom" min="1" max="3" step="0.01" value="' + cropEd.zoom + '"></div>' +
@@ -1988,7 +2000,7 @@
         '<h3>ミニキャラ画像と読み込み画面</h3>' +
         '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、設定したキャラクターたちがミニキャラ画像でぴょんぴょん出てきます（未設定のキャラクターはアイコンで出ます）。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
         '<h3>参考画像とヘッダー・アイコン</h3>' +
-        '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。</p>' +
+        '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。プロフィール帳表示で横長の画像が見切れるときは、大きく表示した画面の「プロフィール帳表示の位置を調整」から、プロフィール帳で見える範囲を画像ごとに切り抜けます（ヘッダーやアイコンの位置とは別に覚えられます）。</p>' +
         '<h3>プロンプト</h3>' +
         '<p>タイトルと本文をセットで何件でも登録でき、「コピー」ボタンで本文をそのままコピーできます。</p>' +
         '<h3>関係性</h3>' +
