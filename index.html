@@ -225,6 +225,20 @@
       .prof-sec .cnt { font-size: 12.5px; color: var(--ink2); font-family: var(--font-body); font-weight: 400; }
       .redact { background: #101012; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(140,140,140,.35); }
       .redact-line { height: 1.05em; margin: 7px 0; }
+      .prof-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 14px; }
+      .prof-card .prof-top { margin-bottom: 0; }
+      .prof-colhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-family: var(--font-head); font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+      .prof-colhint { font-family: var(--font-body); font-size: 12px; font-weight: 400; color: var(--ink2); }
+      .prof-info.flat { border: none; background: transparent; padding: 0; }
+      .prof-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 16px; }
+      .proftile {
+        border: 1px solid var(--line); background: var(--surface2); border-radius: var(--radius);
+        padding: 12px 6px 10px; min-height: 66px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 3px; color: var(--ink); cursor: pointer;
+      }
+      .proftile .pt-label { font-size: 13px; font-weight: 700; text-align: center; }
+      .proftile .pt-count { font-size: 15.5px; }
+      .overlay.blur { backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
 
       /* ---------- モーダル ---------- */
       .overlay {
@@ -345,7 +359,16 @@
     }
     var state = loadState();
     var saveWarned = false;
-    function save() {
+    function save(skipTouch) {
+      /* キャラクターのページで内容を保存したら、そのキャラクターの最終更新日を付け替えます */
+      if (!skipTouch) {
+        try {
+          if (ui.view === 'char' && ui.charId) {
+            var cc = findChar(ui.charId);
+            if (cc) cc.updatedAt = Date.now();
+          }
+        } catch (e2) {}
+      }
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
       catch (e) { if (!saveWarned) { saveWarned = true; toast('保存できませんでした。ブラウザの容量がいっぱいの可能性があります'); } }
     }
@@ -447,7 +470,7 @@
     var overlayEl = document.getElementById('overlay');
     var sheetEl = document.getElementById('sheet');
     function openSheet(html) { sheetEl.innerHTML = html; overlayEl.classList.add('open'); sheetEl.scrollTop = 0; }
-    function closeSheet() { overlayEl.classList.remove('open'); sheetEl.innerHTML = ''; cropEd = null; form = null; }
+    function closeSheet() { overlayEl.classList.remove('open'); overlayEl.classList.remove('blur'); sheetEl.innerHTML = ''; cropEd = null; form = null; }
     overlayEl.addEventListener('click', function (e) { if (e.target === overlayEl) closeSheet(); });
     function sheetHead(title) {
       return '<div style="display:flex;align-items:flex-start;gap:8px"><h2 style="flex:1">' + esc(title) + '</h2>' +
@@ -481,7 +504,7 @@
       render();
     }
     function charViewMode() { return state.viewMode === 'profile' ? 'profile' : 'sections'; }
-    function setCharView(mode) { state.viewMode = mode; save(); render(); }
+    function setCharView(mode) { state.viewMode = mode; save(true); render(); }
 
     /* ================= 一覧画面 ================= */
     function filteredChars() {
@@ -810,11 +833,23 @@
       app.innerHTML = h;
     }
     /* ================= プロフィール帳表示 ================= */
+    function fmtUpdated(ts) {
+      if (!ts) return '―';
+      var d = new Date(ts);
+      function p(n) { return ('0' + n).slice(-2); }
+      return d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function profTile(key, label, count) {
+      return '<button type="button" class="proftile" onclick="openProfSection(\'' + key + '\')" aria-label="' + esc(label) + 'を開く">' +
+        '<span class="pt-label">' + esc(label) + '</span><span class="pt-count">' + esc(count) + '</span></button>';
+    }
     function profileBookHTML(c) {
       var full = fullName(c), headN = headName(c);
-      var h = '<div class="prof-top">';
+      var h = '<div class="prof-card"><div class="prof-top">';
       /* 参考画像（横スワイプ） */
       h += '<div>';
+      h += '<div class="prof-colhead"><span>参考画像（' + (c.images || []).length + '）</span>' +
+        ((c.images || []).length > 1 ? '<span class="prof-colhint">横にスワイプできます</span>' : '') + '</div>';
       if ((c.images || []).length) {
         h += '<div class="carousel">' + c.images.map(function (img, i) {
           return '<div class="cslide" onclick="openViewer(\'' + img.id + '\')" role="button" tabindex="0" aria-label="参考画像を大きく見る">' +
@@ -822,8 +857,7 @@
             '<span class="idx">' + (i + 1) + ' / ' + c.images.length + '</span>' +
             (img.caption ? '<span class="cap">' + esc(img.caption) + '</span>' : '') + '</div>';
         }).join('') + '</div>';
-        h += '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">' +
-          (c.images.length > 1 ? '← 横にスワイプすると、ほかの画像が見られます。タップすると大きく表示されます。' : 'タップすると大きく表示されます。') + '</p>';
+        h += '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">タップすると大きく表示されます。</p>';
       } else {
         h += '<div class="carousel"><div class="cslide"><div class="c-noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div></div></div>' +
           '<p style="font-size:12px;color:var(--ink2);margin:6px 2px 0">まだ参考画像がありません。</p>';
@@ -831,7 +865,8 @@
       if (!ui.preview) h += '<div style="margin-top:8px"><button type="button" class="btn btn-small" onclick="document.getElementById(\'file-imgs\').click()">＋ 参考画像を追加</button></div>';
       h += '</div>';
       /* 基本情報 */
-      h += '<div class="prof-info"><div style="display:flex;gap:12px;align-items:center">' + iconHTML(c, 72) +
+      h += '<div><div class="prof-colhead"><span>プロフィール</span></div>' +
+        '<div class="prof-info flat"><div style="display:flex;gap:12px;align-items:center">' + iconHTML(c, 72) +
         '<div style="min-width:0">' + (c.furigana ? '<div class="furigana">' + esc(c.furigana) + '</div>' : '') +
         '<div class="char-name" style="font-size:clamp(22px,5vw,30px)">' + esc(headN) + '</div>' +
         (full !== headN ? '<div class="char-full">' + esc(full) + '</div>' : '') + '</div></div>' +
@@ -839,84 +874,123 @@
         '<div><dt>区分</dt><dd><span class="catbadge">' + esc(catName(c.categoryId)) + '</span></dd></div>' +
         '<div><dt>イメージカラー</dt><dd><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</dd></div>' +
         ((c.tags || []).length ? '<div><dt>タグ</dt><dd>' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join(' ') + '</dd></div>' : '') +
+        '<div><dt>最終更新日</dt><dd>' + fmtUpdated(c.updatedAt) + '</dd></div>' +
         '</dl>' +
         (c.memo ? '<div style="margin-top:12px">' + longTextHTML(c.memo, c.id + ':memo') + '</div>' : '') +
-        '</div></div>';
-      /* 下の情報（項目の並び順に合わせます。参考画像は上に表示済みです） */
-      sectionOrder(c).forEach(function (key) {
-        if (key === 'prompts') {
-          h += '<div class="prof-sec"><h2>プロンプト <span class="cnt">' + (c.prompts || []).length + '件</span></h2>';
-          if (!(c.prompts || []).length) {
-            h += '<p class="empty-note">まだプロンプトがありません。</p>';
-          } else {
-            h += c.prompts.map(function (p) {
-              return '<div class="item"><div class="item-top"><span class="item-title">' + esc(p.title || '（タイトルなし）') + '</span>' +
-                '<span class="item-btns"><button type="button" class="btn btn-primary btn-small" onclick="copyPrompt(\'' + p.id + '\')">コピー</button>' +
-                (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openPromptForm(\'' + p.id + '\')">編集</button>' +
-                '<button type="button" class="btn btn-small btn-danger" onclick="deletePrompt(\'' + p.id + '\')">削除</button>') +
-                '</span></div><div class="item-body">' + longTextHTML(p.body, c.id + ':pr:' + p.id) + '</div></div>';
-            }).join('');
-          }
-          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openPromptForm(null)">＋ プロンプトを追加</button>';
-          h += '</div>';
-        }
-        if (key === 'links') {
-          h += '<div class="prof-sec"><h2>リンク <span class="cnt">' + (c.links || []).length + '件</span></h2>';
-          if (!(c.links || []).length) {
-            h += '<p class="empty-note">まだリンクがありません。</p>';
-          } else {
-            h += c.links.map(function (l) {
-              return '<div class="item"><div class="item-top"><span class="item-title"><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a></span>' +
-                '<span class="item-btns">' +
-                (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openLinkForm(\'' + l.id + '\')">編集</button>' +
-                '<button type="button" class="btn btn-small btn-danger" onclick="deleteLink(\'' + l.id + '\')">削除</button>') +
-                '</span></div><div style="font-size:12.5px;color:var(--ink2);word-break:break-all">' + esc(l.url) + '</div></div>';
-            }).join('');
-          }
-          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openLinkForm(null)">＋ リンクを追加</button>';
-          h += '</div>';
-        }
-        if (key === 'rels') {
-          h += '<div class="prof-sec"><h2>関係性 <span class="cnt">' + (c.relationships || []).length + '件</span></h2>';
-          if (!(c.relationships || []).length) {
-            h += '<p class="empty-note">まだ関係性がありません。</p>';
-          } else {
-            h += c.relationships.map(function (r) {
-              var o = findChar(r.otherId);
-              var oName = o ? headName(o) : '（削除されたキャラクター）';
-              var s = '<div class="relcard" onclick="goChar(\'' + r.otherId + '\')" role="button" tabindex="0">' +
-                (o ? iconHTML(o, 48) : '<span class="iconinitial" style="width:48px;height:48px;background:#999;font-size:22px">？</span>') +
-                '<span class="relcard-main"><span class="item-title">' + esc(oName) + '</span>' +
-                (r.label ? ' <span class="catbadge">' + esc(r.label) + '</span>' : '');
-              if (r.memo) s += '<span style="display:block">' + longTextHTML(r.memo, c.id + ':rel:' + r.rid) + '</span>';
-              if (r.feelingsTo) s += '<span class="relfeel" style="display:block"><b>' + esc(headN) + ' → ' + esc(oName) + '：</b>' + esc(r.feelingsTo) + '</span>';
-              if (r.feelingsFrom) s += '<span class="relfeel" style="display:block"><b>' + esc(oName) + ' → ' + esc(headN) + '：</b>' + esc(r.feelingsFrom) + '</span>';
-              s += '</span>';
-              if (!ui.preview) {
-                s += '<span class="item-btns"><button type="button" class="btn btn-small" onclick="event.stopPropagation();openRelForm(\'' + r.rid + '\')">編集</button>' +
-                  '<button type="button" class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteRel(\'' + r.rid + '\')">削除</button></span>';
-              }
-              return s + '</div>';
-            }).join('');
-          }
-          if (!ui.preview) h += '<button type="button" class="btn btn-small" onclick="openRelForm(null)">＋ 関係性を追加</button>';
-          h += '</div>';
-        }
-        if (key === 'secrets') {
-          /* プロフィール帳表示では、秘匿情報は鍵を開けていても黒塗り🔒のまま表示します */
-          h += '<div class="prof-sec"><h2>🔒 秘匿情報</h2>';
-          if (!(c.secrets || []).length) {
-            h += '<p class="empty-note">秘匿情報は登録されていません。</p>';
-          } else {
-            h += c.secrets.map(function () {
-              return '<div class="item" aria-hidden="true"><div class="redact redact-line" style="width:42%"></div><div class="redact redact-line"></div><div class="redact redact-line" style="width:68%"></div></div>';
-            }).join('');
-            h += '<p style="text-align:center;color:var(--ink2);font-size:13px;margin:6px 0 2px">🔒 プロフィール帳表示では、秘匿情報は黒塗りのまま表示されます。<br>中身を見るときは「項目ごと表示」に切り替えてください。</p>';
-          }
-          h += '</div>';
-        }
-      });
+        '</div></div></div>';
+      /* 項目タイル（項目の並び順どおりに並べます。タップするとポップアップで中身が見られます） */
+      var tileLabels = { images: '参考画像', prompts: 'プロンプト', links: 'リンク', rels: '関係性', secrets: '🔒 秘匿情報' };
+      var tileCounts = {
+        images: (c.images || []).length + ' 枚',
+        prompts: (c.prompts || []).length + ' 件',
+        links: (c.links || []).length + ' 件',
+        rels: (c.relationships || []).length + ' 件',
+        secrets: (c.secrets || []).length + ' 件'
+      };
+      h += '<div class="prof-tiles">' + sectionOrder(c).map(function (k) { return profTile(k, tileLabels[k], tileCounts[k]); }).join('') + '</div>';
+      h += '<p style="font-size:12px;color:var(--ink2);margin:8px 2px 0">項目をタップすると、ポップアップで中身が見られます。</p>';
+      h += '</div>';
       return h;
+    }
+    /* ポップアップ内の長い文章用（開閉したらポップアップを作り直します） */
+    function profLongText(text, key, secKey) {
+      text = text || '';
+      if (text.length <= 160) return '<div>' + esc(text) + '</div>';
+      var open = !!ui.expanded[key];
+      return '<div class="' + (open ? '' : 'clamp') + '">' + esc(text) + '</div>' +
+        '<button type="button" class="morebtn" onclick="event.stopPropagation();toggleExpandProf(\'' + key + '\',\'' + secKey + '\')">' + (open ? '閉じる' : '続きを読む') + '</button>';
+    }
+    function toggleExpandProf(key, secKey) { ui.expanded[key] = !ui.expanded[key]; openProfSection(secKey); }
+    /* タイルをタップしたとき：背景をぼかしたポップアップで、その項目の中身を表示します */
+    function openProfSection(key) {
+      var c = findChar(ui.charId); if (!c) return;
+      var headN = headName(c);
+      var title = '', body = '';
+      if (key === 'images') {
+        title = '参考画像（' + (c.images || []).length + '枚）';
+        if (!(c.images || []).length) {
+          body = '<p class="empty-note">まだ参考画像がありません。</p>';
+        } else {
+          var hi = headerImg(c);
+          body = '<div class="imggrid">' + c.images.map(function (img) {
+            return '<button type="button" class="imgthumb" onclick="openViewer(\'' + img.id + '\')">' +
+              '<img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '">' +
+              (hi && img.id === hi.id ? '<span class="headermark">ヘッダー</span>' : '') +
+              (img.caption ? '<span class="cap">' + esc(img.caption) + '</span>' : '') + '</button>';
+          }).join('') + '</div>' +
+            '<p style="font-size:12px;color:var(--ink2);margin:8px 2px 0">タップすると大きく表示されます。</p>';
+        }
+        if (!ui.preview) body += '<div class="form-actions"><button type="button" class="btn btn-primary" onclick="closeSheet();document.getElementById(\'file-imgs\').click()">＋ 参考画像を追加</button></div>';
+      }
+      if (key === 'prompts') {
+        title = 'プロンプト（' + (c.prompts || []).length + '件）';
+        if (!(c.prompts || []).length) {
+          body = '<p class="empty-note">まだプロンプトがありません。</p>';
+        } else {
+          body = c.prompts.map(function (p) {
+            return '<div class="item"><div class="item-top"><span class="item-title">' + esc(p.title || '（タイトルなし）') + '</span>' +
+              '<span class="item-btns"><button type="button" class="btn btn-primary btn-small" onclick="copyPrompt(\'' + p.id + '\')">コピー</button>' +
+              (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openPromptForm(\'' + p.id + '\')">編集</button>' +
+              '<button type="button" class="btn btn-small btn-danger" onclick="deletePrompt(\'' + p.id + '\')">削除</button>') +
+              '</span></div><div class="item-body">' + profLongText(p.body, c.id + ':pr:' + p.id, 'prompts') + '</div></div>';
+          }).join('');
+        }
+        if (!ui.preview) body += '<div class="form-actions"><button type="button" class="btn btn-primary" onclick="openPromptForm(null)">＋ プロンプトを追加</button></div>';
+      }
+      if (key === 'links') {
+        title = 'リンク（' + (c.links || []).length + '件）';
+        if (!(c.links || []).length) {
+          body = '<p class="empty-note">まだリンクがありません。</p>';
+        } else {
+          body = c.links.map(function (l) {
+            return '<div class="item"><div class="item-top"><span class="item-title"><a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label || l.url) + '</a></span>' +
+              '<span class="item-btns">' +
+              (ui.preview ? '' : '<button type="button" class="btn btn-small" onclick="openLinkForm(\'' + l.id + '\')">編集</button>' +
+              '<button type="button" class="btn btn-small btn-danger" onclick="deleteLink(\'' + l.id + '\')">削除</button>') +
+              '</span></div><div style="font-size:12.5px;color:var(--ink2);word-break:break-all">' + esc(l.url) + '</div></div>';
+          }).join('');
+        }
+        if (!ui.preview) body += '<div class="form-actions"><button type="button" class="btn btn-primary" onclick="openLinkForm(null)">＋ リンクを追加</button></div>';
+      }
+      if (key === 'rels') {
+        title = '関係性（' + (c.relationships || []).length + '件）';
+        if (!(c.relationships || []).length) {
+          body = '<p class="empty-note">まだ関係性がありません。</p>';
+        } else {
+          body = c.relationships.map(function (r) {
+            var o = findChar(r.otherId);
+            var oName = o ? headName(o) : '（削除されたキャラクター）';
+            var s = '<div class="relcard" onclick="closeSheet();goChar(\'' + r.otherId + '\')" role="button" tabindex="0">' +
+              (o ? iconHTML(o, 48) : '<span class="iconinitial" style="width:48px;height:48px;background:#999;font-size:22px">？</span>') +
+              '<span class="relcard-main"><span class="item-title">' + esc(oName) + '</span>' +
+              (r.label ? ' <span class="catbadge">' + esc(r.label) + '</span>' : '');
+            if (r.memo) s += '<span style="display:block">' + profLongText(r.memo, c.id + ':rel:' + r.rid, 'rels') + '</span>';
+            if (r.feelingsTo) s += '<span class="relfeel" style="display:block"><b>' + esc(headN) + ' → ' + esc(oName) + '：</b>' + esc(r.feelingsTo) + '</span>';
+            if (r.feelingsFrom) s += '<span class="relfeel" style="display:block"><b>' + esc(oName) + ' → ' + esc(headN) + '：</b>' + esc(r.feelingsFrom) + '</span>';
+            s += '</span>';
+            if (!ui.preview) {
+              s += '<span class="item-btns"><button type="button" class="btn btn-small" onclick="event.stopPropagation();openRelForm(\'' + r.rid + '\')">編集</button>' +
+                '<button type="button" class="btn btn-small btn-danger" onclick="event.stopPropagation();deleteRel(\'' + r.rid + '\')">削除</button></span>';
+            }
+            return s + '</div>';
+          }).join('');
+        }
+        if (!ui.preview) body += '<div class="form-actions"><button type="button" class="btn btn-primary" onclick="openRelForm(null)">＋ 関係性を追加</button></div>';
+      }
+      if (key === 'secrets') {
+        /* プロフィール帳表示では、秘匿情報は鍵を開けていても黒塗り🔒のまま表示します */
+        title = '🔒 秘匿情報';
+        if (!(c.secrets || []).length) {
+          body = '<p class="empty-note">秘匿情報は登録されていません。</p>';
+        } else {
+          body = c.secrets.map(function () {
+            return '<div class="item" aria-hidden="true"><div class="redact redact-line" style="width:42%"></div><div class="redact redact-line"></div><div class="redact redact-line" style="width:68%"></div></div>';
+          }).join('') +
+            '<p style="text-align:center;color:var(--ink2);font-size:13px;margin:6px 0 2px">🔒 プロフィール帳表示では、秘匿情報は黒塗りのまま表示されます。<br>中身を見るときは「項目ごと表示」に切り替えてください。</p>';
+        }
+      }
+      openSheet(sheetHead(title) + body);
+      overlayEl.classList.add('blur');
     }
     function askUnlock() {
       var c = findChar(ui.charId);
@@ -1319,7 +1393,7 @@
       } else {
         target = Object.assign({
           id: uid(), images: [], headerImgId: null, headerCrop: { x: .5, y: .5, zoom: 1 },
-          prompts: [], links: [], secrets: [], relationships: []
+          prompts: [], links: [], secrets: [], relationships: [], updatedAt: Date.now()
         }, data);
         state.characters.push(target);
         save(); closeSheet(); goChar(target.id); toast('キャラクターを追加しました');
@@ -1448,6 +1522,7 @@
         r.label = label; r.memo = memo; r.feelingsTo = to; r.feelingsFrom = from;
         var o = findChar(r.otherId);
         if (o) {
+          o.updatedAt = Date.now();
           var m = (o.relationships || []).find(function (x) { return x.rid === rid; });
           if (m) { m.label = label; m.memo = memo; m.feelingsTo = from; m.feelingsFrom = to; }
         }
@@ -1458,6 +1533,7 @@
         c.relationships.push({ rid: newRid, otherId: otherId, label: label, memo: memo, feelingsTo: to, feelingsFrom: from });
         o2.relationships = o2.relationships || [];
         o2.relationships.push({ rid: newRid, otherId: c.id, label: label, memo: memo, feelingsTo: from, feelingsFrom: to });
+        o2.updatedAt = Date.now();
       }
       save(); closeSheet(); render(); toast('関係性を保存しました');
     }
@@ -1467,7 +1543,7 @@
       var o = r ? findChar(r.otherId) : null;
       askConfirm('関係性を削除しますか？', '相手のページからも、この関係性が消えます。元に戻せません。', '削除する', function () {
         c.relationships = (c.relationships || []).filter(function (x) { return x.rid !== rid; });
-        if (o) o.relationships = (o.relationships || []).filter(function (x) { return x.rid !== rid; });
+        if (o) { o.relationships = (o.relationships || []).filter(function (x) { return x.rid !== rid; }); o.updatedAt = Date.now(); }
         save(); render(); toast('関係性を削除しました');
       }, true);
     }
@@ -1625,7 +1701,7 @@
         '<h3>並べ替え・畳む</h3>' +
         '<p>「⇅ 項目を並べ替える」を押すと、参考画像・プロンプト・リンク・関係性・🔒秘匿情報といった項目そのものの順番を、↑↓ボタンで入れ替えられます（キャラクターごとに保存されます）。各セクションの「⇅ 並べ替え」では、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
         '<h3>表示の切り替え（プロフィール帳表示）</h3>' +
-        '<p>キャラクターのページ上部の切り替えで、「項目ごと表示」と「📖 プロフィール帳表示」を選べます。プロフィール帳表示では、参考画像が横にスワイプできる形で大きく並び、その横に名前・区分・イメージカラー・タグ・メモなどの基本情報、下にプロンプト・リンク・関係性などがひとつにまとまって表示されます。選んだ表示はそのまま覚えられます。🔒秘匿情報は、プロフィール帳表示では鍵を開けているときでも中身を見せず、黒塗りのまま表示されます。</p>' +
+        '<p>キャラクターのページ上部の切り替えで、「項目ごと表示」と「📖 プロフィール帳表示」を選べます。プロフィール帳表示では、参考画像が横にスワイプできる形で大きく並び、その横に名前・区分・イメージカラー・タグ・メモ・最終更新日などの基本情報が表示されます。下に並んだ四角い項目（参考画像・プロンプト・リンク・関係性・🔒秘匿情報）をタップすると、背景がぼやけたポップアップで、その項目の中身が見られます（追加や編集もポップアップの中からできます）。最終更新日は、そのキャラクターの内容を保存したときに自動で付け替わります。選んだ表示はそのまま覚えられます。🔒秘匿情報は、プロフィール帳表示では鍵を開けているときでも中身を見せず、黒塗りのまま表示されます。</p>' +
         '<h3>デザイン</h3>' +
         '<p>「🎨 デザイン」から、シック・かわいい・ポップ・ナチュラル・ゴージャスの5種類を選べます。変わるのはまわりの枠だけで、写真やアイコン、イメージカラーは元の色のままです。</p>' +
         '<h3>プレビュー</h3>' +
