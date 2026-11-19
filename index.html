@@ -342,15 +342,18 @@
       .loader-title .ldot { display: inline-block; animation: loader-dot 1.2s ease-in-out infinite; }
       .loader-title .ldot:nth-child(2) { animation-delay: .18s; }
       .loader-title .ldot:nth-child(3) { animation-delay: .36s; }
-      .loader-sub { font-size: 13px; color: var(--ink2); margin: 0; }
+      .loader-sub { font-size: 12.5px; color: var(--ink2); margin: 2px 0 0; line-height: 1.55; }
       .loader-bar {
-        width: 176px; height: 11px; margin: 18px auto 0; border-radius: 999px;
+        width: 200px; max-width: 64vw; height: 11px; margin: 16px auto 0; border-radius: 999px;
         background: var(--surface2); border: 1px solid var(--line); overflow: hidden;
       }
       .loader-bar i {
-        display: block; height: 100%; width: 42%; border-radius: 999px;
+        display: block; height: 100%; width: 0%; border-radius: 999px;
         background: linear-gradient(90deg, #ef9dbd, #b79ce0, #8fc3e8);
-        animation: loader-bar 1.15s ease-in-out infinite;
+      }
+      .loader-pct {
+        font-size: 11.5px; color: var(--ink2); margin: 6px 0 0; letter-spacing: .1em;
+        font-variant-numeric: tabular-nums;
       }
       /* うちの子パレード（登録があるときだけ表示） */
       .loader-chars { display: none; }
@@ -417,10 +420,9 @@
       }
       @keyframes loader-hop { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-11px) scale(1.16); } }
       @keyframes loader-dot { 0%, 100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
-      @keyframes loader-bar { 0% { transform: translateX(-115%); } 100% { transform: translateX(300%); } }
       @media (prefers-reduced-motion: reduce) {
         #loader, #loader *, #charloader, #charloader * { animation: none !important; }
-        .loader-bar i { transform: none; width: 100%; opacity: .55; }
+        .loader-bar i { opacity: .55; }
       }
       body.preview .edit-only { display: none !important; }
       .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -439,9 +441,10 @@
           <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#7b6bb5" /></svg>
           <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#d29a3c" /></svg>
         </div>
-        <p class="loader-title">読み込み中<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
+        <p class="loader-title">読み込み中です<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
         <p class="loader-sub">うちの子たちを呼んでいます</p>
-        <div class="loader-bar" aria-hidden="true"><i></i></div>
+        <div class="loader-bar" id="loader-bar" role="progressbar" aria-label="読み込みの進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="loader-fill"></i></div>
+        <p class="loader-pct" id="loader-pct" aria-hidden="true">0%</p>
       </div>
     </div>
 
@@ -453,9 +456,10 @@
           <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#7b6bb5" /></svg>
           <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#d29a3c" /></svg>
         </div>
-        <p class="loader-title">読み込み中<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
+        <p class="loader-title">読み込み中です<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
         <p class="loader-sub" id="charloader-sub"></p>
-        <div class="loader-bar" aria-hidden="true"><i></i></div>
+        <div class="loader-bar" id="charloader-bar" role="progressbar" aria-label="読み込みの進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="charloader-fill"></i></div>
+        <p class="loader-pct" id="charloader-pct" aria-hidden="true">0%</p>
       </div>
     </div>
 
@@ -665,6 +669,34 @@
     /* キャラクターページを開くとき、その子のミニキャラ画像（なければアイコン・頭文字）で読み込み画面を出します */
     var charLoaderTimers = [];
     function clearCharLoaderTimers() { charLoaderTimers.forEach(function (t) { clearTimeout(t); }); charLoaderTimers = []; }
+    /* 読み込みの進み具合バー：表示されている時間に合わせて0%から100%まで進めます */
+    var loaderProgAnims = {};
+    function setLoaderProgress(prefix, p) {
+      var fill = document.getElementById(prefix + '-fill');
+      var pct = document.getElementById(prefix + '-pct');
+      var bar = document.getElementById(prefix + '-bar');
+      p = Math.max(0, Math.min(100, Math.round(p)));
+      if (fill) fill.style.width = p + '%';
+      if (pct) pct.textContent = p + '%';
+      if (bar) bar.setAttribute('aria-valuenow', String(p));
+    }
+    function stopLoaderProgress(prefix) {
+      if (loaderProgAnims[prefix]) { cancelAnimationFrame(loaderProgAnims[prefix]); delete loaderProgAnims[prefix]; }
+    }
+    function startLoaderProgress(prefix, duration) {
+      stopLoaderProgress(prefix);
+      setLoaderProgress(prefix, 0);
+      var startTs = null;
+      function step(ts) {
+        if (startTs == null) startTs = ts;
+        var t = duration > 0 ? Math.min(1, (ts - startTs) / duration) : 1;
+        setLoaderProgress(prefix, (1 - Math.pow(1 - t, 1.6)) * 100);
+        if (t < 1) loaderProgAnims[prefix] = requestAnimationFrame(step);
+        else delete loaderProgAnims[prefix];
+      }
+      loaderProgAnims[prefix] = requestAnimationFrame(step);
+    }
+    function finishLoaderProgress(prefix) { stopLoaderProgress(prefix); setLoaderProgress(prefix, 100); }
     function showCharLoader(c) {
       var el = document.getElementById('charloader'); if (!el) return;
       clearCharLoaderTimers();
@@ -686,6 +718,7 @@
       if (sub) sub.textContent = customMsg || (hasMini ? (headName(c) + ' が かけつけたよ') : (headName(c) + ' のページを読み込んでいます'));
       el.hidden = false;
       el.classList.remove('done');
+      startLoaderProgress('charloader', 1000);
       layoutCrops();
       charLoaderTimers.push(setTimeout(function () { hideCharLoader(false); }, 1000));
       charLoaderTimers.push(setTimeout(function () { hideCharLoader(true); }, 3200));
@@ -694,9 +727,11 @@
       var el = document.getElementById('charloader'); if (!el || el.hidden) return;
       if (now) {
         clearCharLoaderTimers();
+        stopLoaderProgress('charloader');
         el.hidden = true; el.classList.remove('done');
         return;
       }
+      finishLoaderProgress('charloader');
       el.classList.add('done');
       charLoaderTimers.push(setTimeout(function () { el.hidden = true; el.classList.remove('done'); }, 500));
     }
@@ -1481,7 +1516,7 @@
       /* 読み込み中のひとこと */
       h += '<div class="field"><label for="f-loadmsg">読み込み中のひとこと <span style="color:var(--ink2);font-weight:400">（任意）</span></label>' +
         '<input type="text" id="f-loadmsg" value="' + esc(form.loadMsg) + '" placeholder="例：まってたよ、やっと来たね">' +
-        '<p class="hint">このキャラクターのページを開くときの読み込み画面で出る文言です。空欄のときは「' + '○○ が かけつけたよ」のような決まった文言になります。</p></div>';
+        '<p class="hint">このキャラクターのページを開くときの読み込み画面で、「読み込み中です…」の下に小さく出る文言です。空欄のときは「' + '○○ が かけつけたよ」のような決まった文言になります。</p></div>';
       /* 名前 */
       h += '<div class="field"><span class="flabel">名前の形式</span><div class="segrow">' +
         '<button type="button" class="' + (form.nameStyle === 'single' ? 'on' : '') + '" onclick="setNameStyle(\'single\')">分けない</button>' +
@@ -2014,7 +2049,7 @@
         '<p>キャラクターを表す絵文字や記号を、イメージカラーの下の欄から、ひとつずつ好きなだけ設定できます。よく使うマークはタップで追加でき、スマホの絵文字キーボードからも入力できます。設定したマークは、一覧・キャラクターページ・プロフィール帳表示で、イメージカラーの下に並んで表示されます。</p>' +
         '<h3>ミニキャラ画像と読み込み画面</h3>' +
         '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、登録したキャラクターの中からランダムでひとりだけが、ミニキャラ画像（未設定のときはアイコンや頭文字）でぴょんぴょん出てきます。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
-        '<p>キャラクターの追加・編集画面の「読み込み中のひとこと」に書くと、そのキャラクターのページを開くときの読み込み画面で、その文言が出ます。空欄のときは決まった文言になります。</p>' +
+        '<p>キャラクターの追加・編集画面の「読み込み中のひとこと」に書くと、そのキャラクターのページを開くときの読み込み画面で、「読み込み中です…」の下に小さくその文言が出ます。空欄のときは決まった文言になります。読み込み画面のバーとパーセントは、読み込みの進み具合を表します。</p>' +
         '<h3>参考画像とヘッダー・アイコン</h3>' +
         '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。プロフィール帳表示で横長の画像が見切れるときは、大きく表示した画面の「プロフィール帳表示の位置を調整」から、プロフィール帳で見える範囲を画像ごとに切り抜けます（ヘッダーやアイコンの位置とは別に覚えられます）。</p>' +
         '<h3>プロンプト</h3>' +
@@ -2086,10 +2121,12 @@
       var loaderDone = false;
       function hideLoader() {
         if (loaderDone) return; loaderDone = true;
+        finishLoaderProgress('loader');
         var l = document.getElementById('loader'); if (!l) return;
         l.classList.add('done');
         setTimeout(function () { if (l.parentNode) l.parentNode.removeChild(l); }, 650);
       }
+      startLoaderProgress('loader', hasChars ? 1650 : 1050);
       setTimeout(hideLoader, hasChars ? 1650 : 1050);
       setTimeout(hideLoader, 4000);
     })();
