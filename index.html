@@ -381,6 +381,25 @@
       }
       .loader-char.more .loader-char-icon { background: var(--chip); }
       .loader-char.more .loader-char-initial { color: var(--ink); font-family: var(--font-body); font-size: 16px; }
+      /* ミニキャラ画像がある子は、丸アイコンではなく全身で出ます */
+      .loader-char.mini { width: auto; min-width: 68px; }
+      .loader-char-miniimg {
+        height: 84px; width: auto; max-width: 108px; object-fit: contain; display: block;
+        filter: drop-shadow(0 7px 9px rgba(30, 20, 40, .25));
+      }
+      /* キャラクターページを開くときの読み込み画面 */
+      #charloader {
+        position: fixed; inset: 0; z-index: 150; background: var(--bg);
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity .45s ease, visibility .45s ease;
+      }
+      #charloader[hidden] { display: none; }
+      #charloader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+      .loader-hero img.charloader-miniimg {
+        width: auto; height: auto; max-width: min(230px, 62vw); max-height: 300px; display: block;
+        filter: drop-shadow(0 14px 16px rgba(30, 20, 40, .22));
+      }
+      .charloader-iconframe { width: 124px; height: 124px; border-radius: 50%; border: 4px solid var(--line); display: inline-block; vertical-align: middle; }
       @keyframes loader-char-bounce { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-9px); } }
       @keyframes loader-hero-hop {
         0%, 100% { transform: translateY(0) rotate(-1.4deg) scale(1, 1); }
@@ -393,7 +412,7 @@
       @keyframes loader-dot { 0%, 100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
       @keyframes loader-bar { 0% { transform: translateX(-115%); } 100% { transform: translateX(300%); } }
       @media (prefers-reduced-motion: reduce) {
-        #loader, #loader * { animation: none !important; }
+        #loader, #loader *, #charloader, #charloader * { animation: none !important; }
         .loader-bar i { transform: none; width: 100%; opacity: .55; }
       }
       body.preview .edit-only { display: none !important; }
@@ -419,12 +438,27 @@
       </div>
     </div>
 
+    <div id="charloader" role="status" aria-label="読み込み中" hidden>
+      <div class="loader-inner">
+        <span class="loader-hero" id="charloader-hero" aria-hidden="true"></span>
+        <div class="loader-hearts" aria-hidden="true">
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#c2546e" /></svg>
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#7b6bb5" /></svg>
+          <svg width="17" height="15" viewBox="0 0 20 18"><path d="M10 17 C4 12.5 1 9.3 1 5.8 C1 2.9 3.2 1 5.7 1 C7.5 1 9.2 2 10 3.4 C10.8 2 12.5 1 14.3 1 C16.8 1 19 2.9 19 5.8 C19 9.3 16 12.5 10 17 Z" fill="#d29a3c" /></svg>
+        </div>
+        <p class="loader-title">読み込み中<span class="ldot">.</span><span class="ldot">.</span><span class="ldot">.</span></p>
+        <p class="loader-sub" id="charloader-sub"></p>
+        <div class="loader-bar" aria-hidden="true"><i></i></div>
+      </div>
+    </div>
+
     <div class="wrap" id="app"></div>
 
     <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
     <div id="toast" role="status"></div>
     <input type="file" id="file-imgs" accept="image/*" multiple class="sr" />
     <input type="file" id="file-icon" accept="image/*" class="sr" />
+    <input type="file" id="file-mini" accept="image/*" class="sr" />
     <input type="file" id="file-import" accept="application/json,.json" class="sr" />
 
     <script>
@@ -613,8 +647,51 @@
       else { ui.view = 'list'; renderList(); }
       layoutCrops();
     }
-    function goChar(id) { ui.view = 'char'; ui.charId = id; ui.reorderKey = null; ui.sectionReorder = false; window.scrollTo(0, 0); render(); }
-    function backList() { ui.view = 'list'; ui.charId = null; ui.sectionReorder = false; render(); }
+    function goChar(id) {
+      ui.view = 'char'; ui.charId = id; ui.reorderKey = null; ui.sectionReorder = false;
+      window.scrollTo(0, 0);
+      var c = findChar(id);
+      if (c) showCharLoader(c);
+      render();
+    }
+    function backList() { hideCharLoader(true); ui.view = 'list'; ui.charId = null; ui.sectionReorder = false; render(); }
+    /* キャラクターページを開くとき、その子のミニキャラ画像（なければアイコン・頭文字）で読み込み画面を出します */
+    var charLoaderTimers = [];
+    function clearCharLoaderTimers() { charLoaderTimers.forEach(function (t) { clearTimeout(t); }); charLoaderTimers = []; }
+    function showCharLoader(c) {
+      var el = document.getElementById('charloader'); if (!el) return;
+      clearCharLoaderTimers();
+      var hero = document.getElementById('charloader-hero');
+      var sub = document.getElementById('charloader-sub');
+      var hasMini = !!(c.mini && c.mini.src);
+      if (hero) {
+        if (hasMini) {
+          hero.innerHTML = '<img class="charloader-miniimg" src="' + c.mini.src + '" alt="">';
+        } else if (c.icon && c.icon.src) {
+          hero.innerHTML = cropImgHTML(c.icon, c.icon, 'charloader-iconframe');
+          var fr = hero.querySelector('.cropframe');
+          if (fr) fr.style.borderColor = c.color || 'var(--line)';
+        } else {
+          hero.innerHTML = '<span class="iconinitial" style="width:124px;height:124px;background:' + esc(c.color || '#888') + ';font-size:58px">' + esc(initialOf(c)) + '</span>';
+        }
+      }
+      if (sub) sub.textContent = hasMini ? (headName(c) + ' が かけつけたよ') : (headName(c) + ' のページを読み込んでいます');
+      el.hidden = false;
+      el.classList.remove('done');
+      layoutCrops();
+      charLoaderTimers.push(setTimeout(function () { hideCharLoader(false); }, 1000));
+      charLoaderTimers.push(setTimeout(function () { hideCharLoader(true); }, 3200));
+    }
+    function hideCharLoader(now) {
+      var el = document.getElementById('charloader'); if (!el || el.hidden) return;
+      if (now) {
+        clearCharLoaderTimers();
+        el.hidden = true; el.classList.remove('done');
+        return;
+      }
+      el.classList.add('done');
+      charLoaderTimers.push(setTimeout(function () { el.hidden = true; el.classList.remove('done'); }, 500));
+    }
     function setCatFilter(id) { ui.catFilter = id; render(); }
     function setTagFilter(t) { ui.tagFilter = (ui.tagFilter === t) ? null : t; render(); }
     function onSearch(v) { ui.query = v; renderListBody(); layoutCrops(); }
@@ -1149,6 +1226,25 @@
       };
       reader.readAsDataURL(file);
     }
+    /* ミニキャラ画像用：背景が透明な画像（PNG・WebPなど）は、透明なまま取り込みます */
+    function processMiniFile(file, cb) {
+      if (!/image\/(png|webp|gif)/i.test(file.type || '')) { processImageFile(file, cb); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.naturalWidth, hgt = img.naturalHeight, max = 900;
+          var s = Math.min(1, max / Math.max(w, hgt));
+          var cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(hgt * s));
+          var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+          cv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+          cb({ src: cv.toDataURL('image/png'), w: cw, h: ch });
+        };
+        img.onerror = function () { toast('画像を読み込めませんでした'); };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
     document.getElementById('file-imgs').addEventListener('change', function (e) {
       var files = Array.prototype.slice.call(e.target.files || []);
       e.target.value = '';
@@ -1183,6 +1279,7 @@
                     : '<button type="button" class="btn" onclick="setHeader(\'' + img.id + '\')">ヘッダーにする</button>') +
           '<button type="button" class="btn" onclick="setIconFromImage(\'' + img.id + '\')">アイコンにする</button>' +
           '<button type="button" class="btn" onclick="setBothFromImage(\'' + img.id + '\')">★ ヘッダーとアイコンに両方する</button>' +
+          '<button type="button" class="btn" onclick="setMiniFromImage(\'' + img.id + '\')">ミニキャラ画像にする</button>' +
           '<button type="button" class="btn btn-danger" onclick="deleteImage(\'' + img.id + '\')">この画像を削除</button>') +
         '</div></div>';
       openSheet(h);
@@ -1221,6 +1318,12 @@
       c.headerImgId = imgId; c.headerCrop = { x: .5, y: .5, zoom: 1 };
       c.icon = { src: img.src, w: img.w, h: img.h, x: .5, y: .5, zoom: 1 };
       save(); closeSheet(); render(); toast('ヘッダーとアイコンの両方に設定しました');
+    }
+    function setMiniFromImage(imgId) {
+      var c = findChar(ui.charId); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      c.mini = { src: img.src, w: img.w, h: img.h };
+      save(); closeSheet(); render(); toast('ミニキャラ画像に設定しました');
     }
     function deleteImage(imgId) {
       var c = findChar(ui.charId); if (!c) return;
@@ -1308,6 +1411,7 @@
         tags: c ? (c.tags || []).slice() : [],
         memo: c ? (c.memo || '') : '',
         icon: c && c.icon ? { src: c.icon.src, w: c.icon.w, h: c.icon.h, x: c.icon.x, y: c.icon.y, zoom: c.icon.zoom } : null,
+        mini: c && c.mini && c.mini.src ? { src: c.mini.src, w: c.mini.w, h: c.mini.h } : null,
         confirmDelete: false
       };
       renderCharForm();
@@ -1344,6 +1448,14 @@
         (form.icon ? '<button type="button" class="btn btn-small" onclick="formIconAdjust()">位置を調整</button>' +
                      '<button type="button" class="btn btn-small" onclick="formIconClear()">外す</button>' : '') +
         '</span></div><p class="hint">未設定のときは、イメージカラーと名前の頭文字がアイコンになります。</p></div>';
+      /* ミニキャラ画像 */
+      h += '<div class="field"><span class="flabel">ミニキャラ画像 <span style="color:var(--ink2);font-weight:400">（任意・アイコンとは別です）</span></span>' +
+        '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span id="f-miniprev">' + formMiniHTML() + '</span>' +
+        '<span style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button type="button" class="btn btn-small" onclick="formMiniFromPhoto()">写真から選ぶ</button>' +
+        (c && (c.images || []).length ? '<button type="button" class="btn btn-small" onclick="formMiniFromImages()">参考画像から選ぶ</button>' : '') +
+        (form.mini ? '<button type="button" class="btn btn-small" onclick="formMiniClear()">外す</button>' : '') +
+        '</span></div><p class="hint">このキャラクターのページを開くときの読み込み画面で、大きくぴょんぴょん出てきます。ページを開いたときの読み込み画面にも出てきます。背景が透明な画像（PNGなど）がおすすめです。</p></div>';
       /* 名前 */
       h += '<div class="field"><span class="flabel">名前の形式</span><div class="segrow">' +
         '<button type="button" class="' + (form.nameStyle === 'single' ? 'on' : '') + '" onclick="setNameStyle(\'single\')">分けない</button>' +
@@ -1519,6 +1631,34 @@
       openCrop(form.icon.src, form.icon.w, form.icon.h, '1 / 1', form.icon, function (crop) { form.icon = crop; renderCharForm(); });
     }
     function formIconClear() { readFormFields(); form.icon = null; renderCharForm(); }
+    function formMiniHTML() {
+      if (form.mini) {
+        return '<img alt="" src="' + form.mini.src + '" style="height:104px;width:auto;max-width:150px;object-fit:contain;display:block;filter:drop-shadow(0 5px 7px rgba(30,20,40,.25))">';
+      }
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:104px;height:104px;border:1px dashed var(--line);border-radius:var(--radius);color:var(--ink2);font-size:12.5px;text-align:center;padding:6px">未設定</span>';
+    }
+    function formMiniFromPhoto() { readFormFields(); document.getElementById('file-mini').click(); }
+    document.getElementById('file-mini').addEventListener('change', function (e) {
+      var f = (e.target.files || [])[0]; e.target.value = '';
+      if (!f || !form) return;
+      processMiniFile(f, function (rec) { form.mini = rec; renderCharForm(); });
+    });
+    function formMiniFromImages() {
+      readFormFields();
+      var c = findChar(form.id); if (!c) return;
+      var h = sheetHead('参考画像からミニキャラ画像を選ぶ') + '<div class="imggrid">' +
+        (c.images || []).map(function (img) {
+          return '<button type="button" class="imgthumb" onclick="formMiniPick(\'' + img.id + '\')"><img src="' + img.src + '" alt="' + esc(img.caption || '参考画像') + '"></button>';
+        }).join('') + '</div><div class="form-actions"><button type="button" class="btn" onclick="renderCharForm()">戻る</button></div>';
+      openSheet(h);
+    }
+    function formMiniPick(imgId) {
+      var c = findChar(form.id); if (!c) return;
+      var img = (c.images || []).find(function (i) { return i.id === imgId; }); if (!img) return;
+      form.mini = { src: img.src, w: img.w, h: img.h };
+      renderCharForm();
+    }
+    function formMiniClear() { readFormFields(); form.mini = null; renderCharForm(); }
     function askDeleteChar() { readFormFields(); form.confirmDelete = true; renderCharForm(); }
     function cancelDeleteChar() { form.confirmDelete = false; renderCharForm(); }
     function doDeleteChar() {
@@ -1536,7 +1676,7 @@
       var data = {
         nameStyle: form.nameStyle, name: form.name.trim(), family: form.family.trim(), given: form.given.trim(),
         furigana: form.furigana.trim(), categoryId: form.categoryId || null, color: form.color,
-        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon
+        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon, mini: form.mini
       };
       var target;
       if (form.id) {
@@ -1845,6 +1985,8 @@
         '<p>色の円（カラーピッカー）から選ぶか、#からはじまるカラーコードで指定できます。「最近使用した色」や「反対色にする」も使えます。アイコン未設定のときの丸や、ヘッダー画像がないときの背景に使われます。</p>' +
         '<h3>イメージマーク</h3>' +
         '<p>キャラクターを表す絵文字や記号を、イメージカラーの下の欄から、ひとつずつ好きなだけ設定できます。よく使うマークはタップで追加でき、スマホの絵文字キーボードからも入力できます。設定したマークは、一覧・キャラクターページ・プロフィール帳表示で、イメージカラーの下に並んで表示されます。</p>' +
+        '<h3>ミニキャラ画像と読み込み画面</h3>' +
+        '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、設定したキャラクターたちがミニキャラ画像でぴょんぴょん出てきます（未設定のキャラクターはアイコンで出ます）。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
         '<h3>参考画像とヘッダー・アイコン</h3>' +
         '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。</p>' +
         '<h3>プロンプト</h3>' +
@@ -1886,6 +2028,12 @@
       var h = '';
       pool.forEach(function (c, idx) {
         var name = headName(c);
+        if (c.mini && c.mini.src) {
+          h += '<div class="loader-char mini" style="animation-delay:' + (idx * 0.14).toFixed(2) + 's">' +
+            '<img class="loader-char-miniimg" alt="" src="' + esc(c.mini.src) + '">' +
+            '<span class="loader-char-name">' + esc(name) + '</span></div>';
+          return;
+        }
         var src = null, pos = '50% 50%';
         if (c.icon && c.icon.src) {
           src = c.icon.src;
