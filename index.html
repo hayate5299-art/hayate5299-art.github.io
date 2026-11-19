@@ -120,6 +120,14 @@
       }
       button.tagchip { cursor: pointer; }
       .tagchip.on { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      .marksrow { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+      .markitem { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; padding: 2px 7px; border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 16.5px; line-height: 1; }
+      .markedit { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+      .markchip { display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 3px 6px 3px 10px; border-radius: 999px; background: var(--chip); color: var(--ink); border: 1px solid transparent; }
+      .markchip .markglyph { font-size: 19px; line-height: 1; }
+      .markchip button { border: none; background: none; color: inherit; min-height: 28px; padding: 0 4px; font-size: 14px; cursor: pointer; }
+      .markpresetrow { display: flex; flex-wrap: wrap; gap: 6px; }
+      .markpreset { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 19px; line-height: 1; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
       .rowlabel { font-size: 12.5px; color: var(--ink2); margin: 2px 0 6px; letter-spacing: .04em; }
 
       /* ---------- 一覧カード ---------- */
@@ -432,6 +440,7 @@
       { n: 'すみれ', c: '#7b6bb5' }, { n: 'ばら', c: '#c2546e' }, { n: 'こはく', c: '#d29a3c' },
       { n: 'ひすい', c: '#3f9e7a' }, { n: 'そら', c: '#4f83b8' }, { n: 'あい', c: '#3c4f8f' }
     ];
+    var MARK_PRESETS = ['🌹','✨','🌙','⭐','🦋','🍓','🎀','🗡️','🔮','💎','♥','♠','♦','♣','♪','†','☾','❄','🔥','🕊️'];
     var DESIGNS = [
       { id: 'chic', name: 'シック', desc: 'モノトーンの枠で大人っぽく。写真や色はそのまま映えます', sw: 'linear-gradient(135deg,#17171a 50%,#f7f7f5 50%)' },
       { id: 'kawaii', name: 'かわいい', desc: 'ピンクとまるみで、やさしい雰囲気に', sw: 'linear-gradient(135deg,#ef9dbd 50%,#fdf3f6 50%)' },
@@ -492,6 +501,21 @@
       return c.name || '';
     }
     function initialOf(c) { var n = headName(c); return n ? n.charAt(0) : '？'; }
+    function marksHTML(c) {
+      if (!(c.marks || []).length) return '';
+      return '<span class="marksrow">' + c.marks.map(function (m) { return '<span class="markitem">' + esc(m) + '</span>'; }).join('') + '</span>';
+    }
+    function splitMarks(t) {
+      t = (t || '').trim();
+      if (!t) return [];
+      try {
+        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+          var seg = new Intl.Segmenter('ja', { granularity: 'grapheme' });
+          return Array.from(seg.segment(t), function (x) { return x.segment; }).filter(function (x) { return x.trim(); });
+        }
+      } catch (e) {}
+      return Array.from(t).filter(function (x) { return x.trim(); });
+    }
     function allTags() {
       var m = {};
       state.characters.forEach(function (c) { (c.tags || []).forEach(function (t) { m[t] = (m[t] || 0) + 1; }); });
@@ -617,7 +641,7 @@
         if (ui.tagFilter && (c.tags || []).indexOf(ui.tagFilter) < 0) return false;
         if (q) {
           var hay = [fullName(c), headName(c), c.family || '', c.given || '', c.furigana || '', catName(c.categoryId)]
-            .concat(c.tags || []).join(' ').toLowerCase();
+            .concat(c.tags || []).concat(c.marks || []).join(' ').toLowerCase();
           if (hay.indexOf(q) < 0) return false;
         }
         return true;
@@ -690,6 +714,9 @@
         '<span>プロンプト ' + (c.prompts || []).length + '</span>' +
         ((c.relationships || []).length ? '<span>関係性 ' + c.relationships.length + '</span>' : '') +
         '</span>';
+      if ((c.marks || []).length) {
+        h += marksHTML(c);
+      }
       if ((c.tags || []).length) {
         h += '<span class="card-tags">' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join('') + '</span>';
       }
@@ -803,6 +830,7 @@
         (full !== headN ? '<div class="char-full">' + esc(full) + '</div>' : '') +
         '<div class="card-meta" style="margin-top:5px"><span class="catbadge">' + esc(catName(c.categoryId)) + '</span>' +
         '<span><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</span></div>' +
+        ((c.marks || []).length ? '<div style="margin-top:7px">' + marksHTML(c) + '</div>' : '') +
         '</div></div>';
       if ((c.tags || []).length) {
         h += '<div class="chiprow">' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join('') + '</div>';
@@ -974,6 +1002,7 @@
         '<dl class="prof-dl">' +
         '<div><dt>区分</dt><dd><span class="catbadge">' + esc(catName(c.categoryId)) + '</span></dd></div>' +
         '<div><dt>イメージカラー</dt><dd><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</dd></div>' +
+        ((c.marks || []).length ? '<div><dt>イメージマーク</dt><dd>' + marksHTML(c) + '</dd></div>' : '') +
         ((c.tags || []).length ? '<div><dt>タグ</dt><dd>' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join(' ') + '</dd></div>' : '') +
         '<div><dt>最終更新日</dt><dd>' + fmtUpdated(c.updatedAt) + '</dd></div>' +
         '</dl>' +
@@ -1280,6 +1309,7 @@
         furigana: c ? (c.furigana || '') : '',
         categoryId: c ? c.categoryId : (state.categories[0] ? state.categories[0].id : null),
         color: c ? (c.color || '#7b6bb5') : '#7b6bb5',
+        marks: c ? (c.marks || []).slice() : [],
         tags: c ? (c.tags || []).slice() : [],
         memo: c ? (c.memo || '') : '',
         icon: c && c.icon ? { src: c.icon.src, w: c.icon.w, h: c.icon.h, x: c.icon.x, y: c.icon.y, zoom: c.icon.zoom } : null,
@@ -1354,6 +1384,16 @@
             return '<button type="button" class="preset' + (form.color === rc ? ' on' : '') + '" style="background:' + rc + '" onclick="formSetColor(\'' + rc + '\')" aria-label="' + rc + '"></button>';
           }).join('') + '</div>' : '') +
         '<p class="hint">色の円から選ぶか、#からはじまるカラーコードでも指定できます。</p></div>';
+      /* イメージマーク（イメージカラーの下） */
+      h += '<div class="field"><span class="flabel">イメージマーク <span style="color:var(--ink2);font-weight:400">（絵文字・記号を、ひとつずつ好きなだけ）</span></span>' +
+        '<div class="markedit" id="f-marks">' + (form.marks.length ? form.marks.map(function (m, i) {
+          return '<span class="markchip"><span class="markglyph">' + esc(m) + '</span><button type="button" onclick="formRemoveMark(' + i + ')" aria-label="マークを外す">✕</button></span>';
+        }).join('') : '<span style="font-size:13px;color:var(--ink2)">まだマークがありません</span>') + '</div>' +
+        '<div class="fieldrow"><input type="text" id="f-markinput" placeholder="絵文字・記号を1つ入力（例：🌹）" style="border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;min-height:42px;background:var(--surface)">' +
+        '<button type="button" class="btn" style="flex:none" onclick="formAddMark()">追加</button></div>' +
+        '<p class="hint">よく使うマーク（タップで追加できます）</p><div class="markpresetrow">' +
+        MARK_PRESETS.map(function (m) { return '<button type="button" class="markpreset" onclick="formAddMarkName(\'' + m + '\')" aria-label="マーク ' + esc(m) + ' を追加">' + esc(m) + '</button>'; }).join('') + '</div>' +
+        '<p class="hint">スマホのキーボードの絵文字入力からも入れられます。複数まとめて入力したときは、1つずつに分けて追加されます。</p></div>';
       /* タグ */
       h += '<div class="field"><span class="flabel">タグ <span style="color:var(--ink2);font-weight:400">（区分とは別の、自由な目印です）</span></span>' +
         '<div class="tagedit" id="f-tags">' + form.tags.map(function (t, i) {
@@ -1387,6 +1427,8 @@
       });
       var tagInput = document.getElementById('f-taginput');
       tagInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); formAddTag(); } });
+      var markInput = document.getElementById('f-markinput');
+      if (markInput) markInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); formAddMark(); } });
       updateNamePreview();
     }
     function formIconHTML() {
@@ -1439,6 +1481,21 @@
       readFormFields(); form.tags.push(t); renderCharForm();
     }
     function formRemoveTag(i) { readFormFields(); form.tags.splice(i, 1); renderCharForm(); }
+    function formAddMark() {
+      var input = document.getElementById('f-markinput');
+      var parts = splitMarks(input ? input.value : '');
+      if (!parts.length) { toast('絵文字・記号を入力してください'); return; }
+      if (form.marks.length + parts.length > 100) { toast('マークは1人100個までです'); return; }
+      readFormFields();
+      parts.forEach(function (m) { form.marks.push(m); });
+      renderCharForm();
+    }
+    function formAddMarkName(m) {
+      if (!m) return;
+      if (form.marks.length >= 100) { toast('マークは1人100個までです'); return; }
+      readFormFields(); form.marks.push(m); renderCharForm();
+    }
+    function formRemoveMark(i) { readFormFields(); form.marks.splice(i, 1); renderCharForm(); }
     function formIconFromPhoto() { readFormFields(); document.getElementById('file-icon').click(); }
     document.getElementById('file-icon').addEventListener('change', function (e) {
       var f = (e.target.files || [])[0]; e.target.value = '';
@@ -1484,7 +1541,7 @@
       var data = {
         nameStyle: form.nameStyle, name: form.name.trim(), family: form.family.trim(), given: form.given.trim(),
         furigana: form.furigana.trim(), categoryId: form.categoryId || null, color: form.color,
-        tags: form.tags.slice(), memo: form.memo, icon: form.icon
+        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon
       };
       var target;
       if (form.id) {
@@ -1791,6 +1848,8 @@
         '<p>区分は大きな分類です。「区分を管理」から追加・名前変更・削除ができ、キャラクターをまとめて別の区分へ移すこともできます。タグは区分とは別に自由に付けられる目印で、一覧でタップすると絞り込めます。</p>' +
         '<h3>イメージカラー</h3>' +
         '<p>色の円（カラーピッカー）から選ぶか、#からはじまるカラーコードで指定できます。「最近使用した色」や「反対色にする」も使えます。アイコン未設定のときの丸や、ヘッダー画像がないときの背景に使われます。</p>' +
+        '<h3>イメージマーク</h3>' +
+        '<p>キャラクターを表す絵文字や記号を、イメージカラーの下の欄から、ひとつずつ好きなだけ設定できます。よく使うマークはタップで追加でき、スマホの絵文字キーボードからも入力できます。設定したマークは、一覧・キャラクターページ・プロフィール帳表示で、イメージカラーの下に並んで表示されます。</p>' +
         '<h3>参考画像とヘッダー・アイコン</h3>' +
         '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。</p>' +
         '<h3>プロンプト</h3>' +
