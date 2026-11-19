@@ -326,7 +326,7 @@
       }
       #loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
       .loader-inner { text-align: center; padding: 24px 20px; }
-      .loader-hero { display: inline-block; animation: loader-hero-hop .92s ease-in-out infinite; }
+      .loader-hero { display: inline-block; animation: loader-hero-hop .78s ease-in-out infinite; }
       .loader-hero img {
         width: 148px; height: auto; display: block;
         filter: drop-shadow(0 12px 14px rgba(30, 20, 40, .22));
@@ -361,8 +361,15 @@
       #loader.has-chars .loader-hero img { width: 108px; }
       .loader-char {
         display: flex; flex-direction: column; align-items: center; gap: 5px;
-        width: 68px; animation: loader-char-bounce 1.15s ease-in-out infinite;
+        width: 68px; animation: loader-char-bounce .95s ease-in-out infinite;
       }
+      /* ページを開くときの読み込み画面は、一回のロードでひとりだけが主役で出ます */
+      #loader.one-char .loader-hero { display: none; }
+      .loader-char.solo { width: auto; animation-name: loader-hero-hop; animation-duration: .78s; }
+      .loader-char.solo .loader-char-icon { width: 118px; height: 118px; border-width: 4px; }
+      .loader-char.solo .loader-char-initial { font-size: 52px; }
+      .loader-char.solo .loader-char-miniimg { height: 158px; max-width: 196px; }
+      .loader-char.solo .loader-char-name { font-size: 13.5px; max-width: 196px; padding: 2px 12px 3px; }
       .loader-char-icon {
         width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex: none;
         background: var(--surface2); border: 3px solid var(--surface);
@@ -400,15 +407,15 @@
         filter: drop-shadow(0 14px 16px rgba(30, 20, 40, .22));
       }
       .charloader-iconframe { width: 124px; height: 124px; border-radius: 50%; border: 4px solid var(--line); display: inline-block; vertical-align: middle; }
-      @keyframes loader-char-bounce { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-9px); } }
+      @keyframes loader-char-bounce { 0%, 100% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(2px) scale(1.05, .93); } 55% { transform: translateY(-16px) scale(.98, 1.04); } 78% { transform: translateY(0) scale(1.03, .96); } }
       @keyframes loader-hero-hop {
-        0%, 100% { transform: translateY(0) rotate(-1.4deg) scale(1, 1); }
-        18% { transform: translateY(2px) rotate(0deg) scale(1.04, .95); }
-        48% { transform: translateY(-17px) rotate(1.6deg) scale(.98, 1.03); }
-        72% { transform: translateY(0) rotate(0deg) scale(1.03, .96); }
-        86% { transform: translateY(-5px) rotate(-.6deg) scale(1, 1); }
+        0%, 100% { transform: translateY(0) rotate(-1.6deg) scale(1, 1); }
+        16% { transform: translateY(3px) rotate(0deg) scale(1.07, .92); }
+        46% { transform: translateY(-30px) rotate(2deg) scale(.97, 1.05); }
+        68% { transform: translateY(0) rotate(0deg) scale(1.05, .94); }
+        84% { transform: translateY(-11px) rotate(-.8deg) scale(1, 1); }
       }
-      @keyframes loader-hop { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-8px) scale(1.12); } }
+      @keyframes loader-hop { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-11px) scale(1.16); } }
       @keyframes loader-dot { 0%, 100% { opacity: .2; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
       @keyframes loader-bar { 0% { transform: translateX(-115%); } 100% { transform: translateX(300%); } }
       @media (prefers-reduced-motion: reduce) {
@@ -675,7 +682,8 @@
           hero.innerHTML = '<span class="iconinitial" style="width:124px;height:124px;background:' + esc(c.color || '#888') + ';font-size:58px">' + esc(initialOf(c)) + '</span>';
         }
       }
-      if (sub) sub.textContent = hasMini ? (headName(c) + ' が かけつけたよ') : (headName(c) + ' のページを読み込んでいます');
+      var customMsg = (c.loadMsg || '').trim();
+      if (sub) sub.textContent = customMsg || (hasMini ? (headName(c) + ' が かけつけたよ') : (headName(c) + ' のページを読み込んでいます'));
       el.hidden = false;
       el.classList.remove('done');
       layoutCrops();
@@ -1074,7 +1082,7 @@
         (full !== headN ? '<div class="char-full">' + esc(full) + '</div>' : '') + '</div></div>' +
         '<dl class="prof-dl">' +
         '<div><dt>区分</dt><dd><span class="catbadge">' + esc(catName(c.categoryId)) + '</span></dd></div>' +
-        '<div><dt>イメージカラー</dt><dd><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</dd></div>' +
+        '<div><dd><span class="colordot" style="background:' + esc(c.color || '#888') + '"></span>' + esc(c.color || '') + '</dd></div>' +
         ((c.marks || []).length ? '<div><dt>イメージマーク</dt><dd>' + marksHTML(c) + '</dd></div>' : '') +
         ((c.tags || []).length ? '<div><dt>タグ</dt><dd>' + c.tags.map(function (t) { return '<span class="tagchip">#' + esc(t) + '</span>'; }).join(' ') + '</dd></div>' : '') +
         '<div><dt>最終更新日</dt><dd>' + fmtUpdated(c.updatedAt) + '</dd></div>' +
@@ -1422,6 +1430,7 @@
         marks: c ? (c.marks || []).slice() : [],
         tags: c ? (c.tags || []).slice() : [],
         memo: c ? (c.memo || '') : '',
+        loadMsg: c ? (c.loadMsg || '') : '',
         icon: c && c.icon ? { src: c.icon.src, w: c.icon.w, h: c.icon.h, x: c.icon.x, y: c.icon.y, zoom: c.icon.zoom } : null,
         mini: c && c.mini && c.mini.src ? { src: c.mini.src, w: c.mini.w, h: c.mini.h } : null,
         confirmDelete: false
@@ -1437,6 +1446,7 @@
       if (document.getElementById('f-furigana')) form.furigana = g('f-furigana');
       if (document.getElementById('f-cat')) form.categoryId = g('f-cat') || null;
       if (document.getElementById('f-memo')) form.memo = g('f-memo');
+      if (document.getElementById('f-loadmsg')) form.loadMsg = g('f-loadmsg');
     }
     function formHeadName() {
       if (form.nameStyle === 'single') return form.name.trim();
@@ -1468,6 +1478,10 @@
         (c && (c.images || []).length ? '<button type="button" class="btn btn-small" onclick="formMiniFromImages()">参考画像から選ぶ</button>' : '') +
         (form.mini ? '<button type="button" class="btn btn-small" onclick="formMiniClear()">外す</button>' : '') +
         '</span></div><p class="hint">このキャラクターのページを開くときの読み込み画面で、大きくぴょんぴょん出てきます。ページを開いたときの読み込み画面にも出てきます。背景が透明な画像（PNGなど）がおすすめです。</p></div>';
+      /* 読み込み中のひとこと */
+      h += '<div class="field"><label for="f-loadmsg">読み込み中のひとこと <span style="color:var(--ink2);font-weight:400">（任意）</span></label>' +
+        '<input type="text" id="f-loadmsg" value="' + esc(form.loadMsg) + '" placeholder="例：まってたよ、やっと来たね">' +
+        '<p class="hint">このキャラクターのページを開くときの読み込み画面で出る文言です。空欄のときは「' + '○○ が かけつけたよ」のような決まった文言になります。</p></div>';
       /* 名前 */
       h += '<div class="field"><span class="flabel">名前の形式</span><div class="segrow">' +
         '<button type="button" class="' + (form.nameStyle === 'single' ? 'on' : '') + '" onclick="setNameStyle(\'single\')">分けない</button>' +
@@ -1688,7 +1702,8 @@
       var data = {
         nameStyle: form.nameStyle, name: form.name.trim(), family: form.family.trim(), given: form.given.trim(),
         furigana: form.furigana.trim(), categoryId: form.categoryId || null, color: form.color,
-        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon, mini: form.mini
+        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon, mini: form.mini,
+        loadMsg: (form.loadMsg || '').trim()
       };
       var target;
       if (form.id) {
@@ -1998,7 +2013,8 @@
         '<h3>イメージマーク</h3>' +
         '<p>キャラクターを表す絵文字や記号を、イメージカラーの下の欄から、ひとつずつ好きなだけ設定できます。よく使うマークはタップで追加でき、スマホの絵文字キーボードからも入力できます。設定したマークは、一覧・キャラクターページ・プロフィール帳表示で、イメージカラーの下に並んで表示されます。</p>' +
         '<h3>ミニキャラ画像と読み込み画面</h3>' +
-        '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、設定したキャラクターたちがミニキャラ画像でぴょんぴょん出てきます（未設定のキャラクターはアイコンで出ます）。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
+        '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、登録したキャラクターの中からランダムでひとりだけが、ミニキャラ画像（未設定のときはアイコンや頭文字）でぴょんぴょん出てきます。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
+        '<p>キャラクターの追加・編集画面の「読み込み中のひとこと」に書くと、そのキャラクターのページを開くときの読み込み画面で、その文言が出ます。空欄のときは決まった文言になります。</p>' +
         '<h3>参考画像とヘッダー・アイコン</h3>' +
         '<p>キャラクターのページで「＋ 参考画像を追加」から写真を追加できます。最初の1枚がヘッダー（ページ上部の帯）になります。画像をタップすると大きく表示され、ヘッダーやアイコンへの設定、キャプションの編集、削除ができます。「★ ヘッダーとアイコンに両方する」で同じ画像を両方に設定できます。位置の調整では、ドラッグとスライダーで表示範囲を動かせます。プロフィール帳表示で横長の画像が見切れるときは、大きく表示した画面の「プロフィール帳表示の位置を調整」から、プロフィール帳で見える範囲を画像ごとに切り抜けます（ヘッダーやアイコンの位置とは別に覚えられます）。</p>' +
         '<h3>プロンプト</h3>' +
@@ -2022,30 +2038,21 @@
 
     /* ================= 初期表示 ================= */
     render();
-    /* 読み込み中画面に、登録済みのうちの子たちを出します */
+    /* 読み込み中画面には、一回のロードでランダムに選ばれたひとりだけを大きく出します */
     function populateLoaderChars() {
       var loader = document.getElementById('loader');
       var wrap = document.getElementById('loader-chars');
       if (!loader || !wrap) return false;
       var chars = (typeof state !== 'undefined' && state && Array.isArray(state.characters)) ? state.characters : [];
       if (!chars.length) return false;
-      var pool = chars.slice();
-      if (pool.length > 5) {
-        for (var i = pool.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
-        }
-        pool = pool.slice(0, 5);
-      }
+      var c = chars[Math.floor(Math.random() * chars.length)];
+      var name = headName(c);
       var h = '';
-      pool.forEach(function (c, idx) {
-        var name = headName(c);
-        if (c.mini && c.mini.src) {
-          h += '<div class="loader-char mini" style="animation-delay:' + (idx * 0.14).toFixed(2) + 's">' +
-            '<img class="loader-char-miniimg" alt="" src="' + esc(c.mini.src) + '">' +
-            '<span class="loader-char-name">' + esc(name) + '</span></div>';
-          return;
-        }
+      if (c.mini && c.mini.src) {
+        h = '<div class="loader-char mini solo">' +
+          '<img class="loader-char-miniimg" alt="" src="' + esc(c.mini.src) + '">' +
+          '<span class="loader-char-name">' + esc(name) + '</span></div>';
+      } else {
         var src = null, pos = '50% 50%';
         if (c.icon && c.icon.src) {
           src = c.icon.src;
@@ -2061,19 +2068,15 @@
         var inner = src
           ? '<img alt="" src="' + esc(src) + '" style="object-position:' + pos + '">'
           : '<span class="loader-char-initial" style="background:' + esc(c.color || '#888888') + '">' + esc(initialOf(c)) + '</span>';
-        h += '<div class="loader-char" style="animation-delay:' + (idx * 0.14).toFixed(2) + 's">' +
+        h = '<div class="loader-char solo">' +
           '<div class="loader-char-icon" style="border-color:' + esc(c.color || 'var(--line)') + '">' + inner + '</div>' +
           '<span class="loader-char-name">' + esc(name) + '</span></div>';
-      });
-      if (chars.length > pool.length) {
-        h += '<div class="loader-char more" style="animation-delay:' + (pool.length * 0.14).toFixed(2) + 's">' +
-          '<div class="loader-char-icon"><span class="loader-char-initial">+' + (chars.length - pool.length) + '</span></div>' +
-          '<span class="loader-char-name">みんな</span></div>';
       }
       wrap.innerHTML = h;
       loader.classList.add('has-chars');
+      loader.classList.add('one-char');
       var sub = loader.querySelector('.loader-sub');
-      if (sub) sub.textContent = chars.length === 1 ? (headName(chars[0]) + ' が かけつけたよ') : 'うちの子たちが かけつけたよ';
+      if (sub) sub.textContent = name + ' が かけつけたよ';
       return true;
     }
     /* 読み込み中画面：うちの子がいるときは少し長めに見せてから、ふわっと消します（固まったとき用の保険つき） */
