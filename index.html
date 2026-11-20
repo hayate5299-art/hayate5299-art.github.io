@@ -122,6 +122,13 @@
       .tagchip.on { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
       .marksrow { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
       .markitem { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; padding: 2px 7px; border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 16.5px; line-height: 1; }
+      .markitem.hasnote { cursor: pointer; position: relative; border: 1px solid var(--line); padding-right: 13px; }
+      .markitem.hasnote::after { content: ""; position: absolute; top: 4px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+      .markitem.hasnote:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .markchip.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+      .marknote-ind { font-size: 10.5px; font-weight: 700; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 1px 6px; margin-left: 3px; line-height: 1.5; }
+      .marknote-box { background: var(--surface2); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin: 2px 0 12px; }
+      .marknote-box textarea { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 9px 11px; min-height: 84px; resize: vertical; line-height: 1.6; }
       .markedit { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
       .markchip { display: inline-flex; align-items: center; gap: 2px; min-height: 36px; padding: 3px 6px 3px 10px; border-radius: 999px; background: var(--chip); color: var(--ink); border: 1px solid transparent; }
       .markchip .markglyph { font-size: 19px; line-height: 1; }
@@ -541,9 +548,34 @@
       return c.name || '';
     }
     function initialOf(c) { var n = headName(c); return n ? n.charAt(0) : '？'; }
+    /* イメージマークは { g: 絵文字・記号, note: そのマークの文章 } の形で保存します。
+       以前のデータ（文字列だけのマーク）も、そのまま読めるようにしています */
+    function markGlyph(m) { return typeof m === 'string' ? m : (m && m.g ? String(m.g) : ''); }
+    function markNote(m) { return (m && typeof m === 'object' && m.note) ? String(m.note) : ''; }
+    function normMark(m) { return { g: markGlyph(m), note: markNote(m) }; }
     function marksHTML(c) {
       if (!(c.marks || []).length) return '';
-      return '<span class="marksrow">' + c.marks.map(function (m) { return '<span class="markitem">' + esc(m) + '</span>'; }).join('') + '</span>';
+      return '<span class="marksrow">' + c.marks.map(function (m, i) {
+        var g = markGlyph(m), note = markNote(m);
+        if (!g) return '';
+        if (note) {
+          return '<span class="markitem hasnote" role="button" tabindex="0" title="タップすると文章が読めます" aria-label="マーク ' + esc(g) + ' の文章を読む" ' +
+            'onclick="event.stopPropagation();openMarkNote(\'' + c.id + '\',' + i + ')" ' +
+            'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openMarkNote(\'' + c.id + '\',' + i + ')}">' + esc(g) + '</span>';
+        }
+        return '<span class="markitem">' + esc(g) + '</span>';
+      }).join('') + '</span>';
+    }
+    /* 文章が付いたマークをタップしたとき：そのマークの文章をポップアップで表示します */
+    function openMarkNote(charId, idx) {
+      var c = findChar(charId); if (!c) return;
+      var m = (c.marks || [])[idx];
+      var g = markGlyph(m), note = markNote(m);
+      if (!g || !note) return;
+      openSheet(sheetHead(headName(c) + ' のイメージマーク') +
+        '<div style="text-align:center;padding:10px 0 12px"><span class="markitem" style="font-size:38px;min-width:64px;height:64px;padding:6px 16px">' + esc(g) + '</span></div>' +
+        '<div class="item-body" style="white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.75;margin-top:0">' + esc(note) + '</div>' +
+        '<div class="form-actions"><span class="spacer"></span><button type="button" class="btn btn-primary" onclick="closeSheet()">閉じる</button></div>');
     }
     function splitMarks(t) {
       t = (t || '').trim();
@@ -756,7 +788,9 @@
         if (ui.tagFilter && (c.tags || []).indexOf(ui.tagFilter) < 0) return false;
         if (q) {
           var hay = [fullName(c), headName(c), c.family || '', c.given || '', c.furigana || '', catName(c.categoryId)]
-            .concat(c.tags || []).concat(c.marks || []).join(' ').toLowerCase();
+            .concat(c.tags || [])
+            .concat((c.marks || []).map(function (m) { return markGlyph(m) + ' ' + markNote(m); }))
+            .join(' ').toLowerCase();
           if (hay.indexOf(q) < 0) return false;
         }
         return true;
@@ -1462,7 +1496,8 @@
         furigana: c ? (c.furigana || '') : '',
         categoryId: c ? c.categoryId : (state.categories[0] ? state.categories[0].id : null),
         color: c ? (c.color || '#7b6bb5') : '#7b6bb5',
-        marks: c ? (c.marks || []).slice() : [],
+        marks: c ? (c.marks || []).map(normMark) : [],
+        markEdit: null,
         tags: c ? (c.tags || []).slice() : [],
         memo: c ? (c.memo || '') : '',
         loadMsg: c ? (c.loadMsg || '') : '',
@@ -1555,13 +1590,18 @@
       /* イメージマーク（イメージカラーの下） */
       h += '<div class="field"><span class="flabel">イメージマーク <span style="color:var(--ink2);font-weight:400">（絵文字・記号を、ひとつずつ好きなだけ）</span></span>' +
         '<div class="markedit" id="f-marks">' + (form.marks.length ? form.marks.map(function (m, i) {
-          return '<span class="markchip"><span class="markglyph">' + esc(m) + '</span><button type="button" onclick="formRemoveMark(' + i + ')" aria-label="マークを外す">✕</button></span>';
+          var hasNote = !!(m.note && m.note.trim());
+          return '<span class="markchip' + (form.markEdit === i ? ' on' : '') + '"><span class="markglyph">' + esc(m.g) + '</span>' +
+            (hasNote ? '<span class="marknote-ind">文</span>' : '') +
+            '<button type="button" onclick="formEditMarkNote(' + i + ')" aria-label="マーク ' + esc(m.g) + ' の文章を書く・直す" title="このマークの文章を書く・直す">✎</button>' +
+            '<button type="button" onclick="formRemoveMark(' + i + ')" aria-label="マークを外す">✕</button></span>';
         }).join('') : '<span style="font-size:13px;color:var(--ink2)">まだマークがありません</span>') + '</div>' +
+        ((form.markEdit != null && form.marks[form.markEdit]) ? markNoteEditorHTML() : '') +
         '<div class="fieldrow"><input type="text" id="f-markinput" placeholder="絵文字・記号を1つ入力（例：🌹）" style="border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;min-height:42px;background:var(--surface)">' +
         '<button type="button" class="btn" style="flex:none" onclick="formAddMark()">追加</button></div>' +
         '<p class="hint">よく使うマーク（タップで追加できます）</p><div class="markpresetrow">' +
         MARK_PRESETS.map(function (m) { return '<button type="button" class="markpreset" onclick="formAddMarkName(\'' + m + '\')" aria-label="マーク ' + esc(m) + ' を追加">' + esc(m) + '</button>'; }).join('') + '</div>' +
-        '<p class="hint">スマホのキーボードの絵文字入力からも入れられます。複数まとめて入力したときは、1つずつに分けて追加されます。</p></div>';
+        '<p class="hint">スマホのキーボードの絵文字入力からも入れられます。複数まとめて入力したときは、1つずつに分けて追加されます。<br>各マークの「✎」を押すと、そのマーク専用の文章を書けます。文章を付けたマーク（「文」の印つき）は、表示画面でタップすると文章が出てきます。</p></div>';
       /* タグ */
       h += '<div class="field"><span class="flabel">タグ <span style="color:var(--ink2);font-weight:400">（区分とは別の、自由な目印です）</span></span>' +
         '<div class="tagedit" id="f-tags">' + form.tags.map(function (t, i) {
@@ -1655,15 +1695,56 @@
       if (!parts.length) { toast('絵文字・記号を入力してください'); return; }
       if (form.marks.length + parts.length > 100) { toast('マークは1人100個までです'); return; }
       readFormFields();
-      parts.forEach(function (m) { form.marks.push(m); });
+      parts.forEach(function (m) { form.marks.push({ g: m, note: '' }); });
       renderCharForm();
     }
     function formAddMarkName(m) {
       if (!m) return;
       if (form.marks.length >= 100) { toast('マークは1人100個までです'); return; }
-      readFormFields(); form.marks.push(m); renderCharForm();
+      readFormFields(); form.marks.push({ g: m, note: '' }); renderCharForm();
     }
-    function formRemoveMark(i) { readFormFields(); form.marks.splice(i, 1); renderCharForm(); }
+    function formRemoveMark(i) {
+      readFormFields();
+      form.marks.splice(i, 1);
+      if (form.markEdit != null) {
+        if (form.markEdit === i) form.markEdit = null;
+        else if (form.markEdit > i) form.markEdit--;
+      }
+      renderCharForm();
+    }
+    /* マークごとの文章の編集欄（選んだマークの下に出ます） */
+    function markNoteEditorHTML() {
+      var i = form.markEdit, m = form.marks[i];
+      if (!m) return '';
+      return '<div class="marknote-box"><div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">' +
+        '<span class="markitem" style="font-size:23px;min-width:44px;height:44px;padding:4px 10px">' + esc(m.g) + '</span>' +
+        '<b style="flex:1">このマークの文章</b></div>' +
+        '<textarea id="f-marknote" placeholder="このマークにまつわる文章をどうぞ（由来や意味、思い出など）" oninput="formMarkNoteInput(this.value)">' + esc(m.note || '') + '</textarea>' +
+        '<p class="hint">キャラクターを保存すると、この文章も一緒に保存されます。表示画面でこのマークをタップすると、この文章が出てきます。</p>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button type="button" class="btn btn-small btn-primary" onclick="formCloseMarkNote()">これでOK</button>' +
+        ((m.note && m.note.trim()) ? '<button type="button" class="btn btn-small" onclick="formClearMarkNote()">文章を消す</button>' : '') +
+        '</div></div>';
+    }
+    function formEditMarkNote(i) {
+      readFormFields();
+      form.markEdit = (form.markEdit === i) ? null : i;
+      renderCharForm();
+      if (form.markEdit != null) {
+        var ta = document.getElementById('f-marknote');
+        if (ta) ta.focus();
+      }
+    }
+    function formMarkNoteInput(v) {
+      if (form && form.markEdit != null && form.marks[form.markEdit]) form.marks[form.markEdit].note = v;
+    }
+    function formCloseMarkNote() { readFormFields(); form.markEdit = null; renderCharForm(); }
+    function formClearMarkNote() {
+      if (form && form.markEdit != null && form.marks[form.markEdit]) form.marks[form.markEdit].note = '';
+      renderCharForm();
+      var ta = document.getElementById('f-marknote');
+      if (ta) ta.focus();
+    }
     function formIconFromPhoto() { readFormFields(); document.getElementById('file-icon').click(); }
     document.getElementById('file-icon').addEventListener('change', function (e) {
       var f = (e.target.files || [])[0]; e.target.value = '';
@@ -1737,7 +1818,7 @@
       var data = {
         nameStyle: form.nameStyle, name: form.name.trim(), family: form.family.trim(), given: form.given.trim(),
         furigana: form.furigana.trim(), categoryId: form.categoryId || null, color: form.color,
-        marks: form.marks.slice(), tags: form.tags.slice(), memo: form.memo, icon: form.icon, mini: form.mini,
+        marks: form.marks.map(function (m) { return { g: m.g, note: m.note || '' }; }), tags: form.tags.slice(), memo: form.memo, icon: form.icon, mini: form.mini,
         loadMsg: (form.loadMsg || '').trim()
       };
       var target;
@@ -2047,6 +2128,7 @@
         '<p>色の円（カラーピッカー）から選ぶか、#からはじまるカラーコードで指定できます。「最近使用した色」や「反対色にする」も使えます。アイコン未設定のときの丸や、ヘッダー画像がないときの背景に使われます。</p>' +
         '<h3>イメージマーク</h3>' +
         '<p>キャラクターを表す絵文字や記号を、イメージカラーの下の欄から、ひとつずつ好きなだけ設定できます。よく使うマークはタップで追加でき、スマホの絵文字キーボードからも入力できます。設定したマークは、一覧・キャラクターページ・プロフィール帳表示で、イメージカラーの下に並んで表示されます。</p>' +
+        '<p>マークひとつひとつに文章も付けられます。キャラクターの追加・編集画面で、各マークの「✎」を押すと、そのマーク専用の文章（由来や意味など）を書けます。文章を付けたマークには「文」の印が付き、表示画面（一覧・キャラクターページ・プロフィール帳表示、プレビュー中も）でそのマークをタップすると、文章がポップアップで出てきます。文章は検索でも探せます。</p>' +
         '<h3>ミニキャラ画像と読み込み画面</h3>' +
         '<p>キャラクターの追加・編集画面で、アイコンとは別に「ミニキャラ画像」を設定できます（背景が透明なPNGなどがおすすめです）。ページを開いたときの読み込み画面では、登録したキャラクターの中からランダムでひとりだけが、ミニキャラ画像（未設定のときはアイコンや頭文字）でぴょんぴょん出てきます。キャラクターのページを開くときの読み込み画面では、そのキャラクターのミニキャラ画像が大きく出てきます（未設定のときはアイコンや頭文字が出ます）。参考画像を大きく表示したところから「ミニキャラ画像にする」でも設定できます。</p>' +
         '<p>キャラクターの追加・編集画面の「読み込み中のひとこと」に書くと、そのキャラクターのページを開くときの読み込み画面で、「読み込み中です…」の下に小さくその文言が出ます。空欄のときは決まった文言になります。読み込み画面のバーとパーセントは、読み込みの進み具合を表します。</p>' +
