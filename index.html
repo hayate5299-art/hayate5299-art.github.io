@@ -174,6 +174,7 @@
       .char-header { aspect-ratio: 16 / 7; border-radius: var(--radius-lg); border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--surface2); }
       .char-header .noimg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
       .char-header .noimg span { font-family: var(--font-head); font-size: clamp(48px, 10vw, 84px); font-weight: 700; color: rgba(255,255,255,.85); }
+      .char-header + .prof-card { margin-top: 14px; }
       .header-actions { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
       .header-actions .btn { background: var(--surface); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
       .profile { display: flex; gap: 14px; align-items: center; margin: 16px 0 6px; flex-wrap: wrap; }
@@ -961,17 +962,18 @@
       h += '<div class="viewseg" role="group" aria-label="表示の切り替え" style="margin-bottom:12px">' +
         '<button type="button" class="' + (charViewMode() === 'profile' ? '' : 'on') + '" onclick="setCharView(\'sections\')">項目ごと表示</button>' +
         '<button type="button" class="' + (charViewMode() === 'profile' ? 'on' : '') + '" onclick="setCharView(\'profile\')">📖 プロフィール帳表示</button></div>';
-      if (charViewMode() === 'profile') { h += profileBookHTML(c); app.innerHTML = h; layoutCrops(); return; }
-      /* ヘッダー */
-      h += '<div class="char-header">';
-      if (hi) h += cropImgHTML(hi, c.headerCrop, 'fill');
-      else h += '<div class="noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div>';
+      /* ヘッダー（項目ごと表示・プロフィール帳表示の両方で、ページ上部の帯として表示します） */
+      var headerHTML = '<div class="char-header">';
+      if (hi) headerHTML += cropImgHTML(hi, c.headerCrop, 'fill');
+      else headerHTML += '<div class="noimg" style="background:' + esc(c.color || '#888') + '"><span>' + esc(initialOf(c)) + '</span></div>';
       if (!ui.preview) {
-        h += '<div class="header-actions">' +
+        headerHTML += '<div class="header-actions">' +
           (hi ? '<button type="button" class="btn btn-small" onclick="openHeaderCrop()">位置を調整</button>' : '') +
           '<button type="button" class="btn btn-small" onclick="document.getElementById(\'file-imgs\').click()">＋ 画像を追加</button></div>';
       }
-      h += '</div>';
+      headerHTML += '</div>';
+      if (charViewMode() === 'profile') { h += headerHTML + profileBookHTML(c); app.innerHTML = h; layoutCrops(); return; }
+      h += headerHTML;
       /* プロフィール */
       h += '<div class="profile">' + iconHTML(c, 84) + '<div style="min-width:0">' +
         (c.furigana ? '<div class="furigana">' + esc(c.furigana) + '</div>' : '') +
@@ -2143,7 +2145,7 @@
         '<h3>並べ替え・畳む</h3>' +
         '<p>「⇅ 項目を並べ替える」を押すと、参考画像・プロンプト・リンク・関係性・🔒秘匿情報といった項目そのものの順番を、↑↓ボタンで入れ替えられます（キャラクターごとに保存されます）。各セクションの「⇅ 並べ替え」では、中身の順番を変えられます。セクションの見出しをタップすると畳んだり開いたりでき、「すべて畳む／すべて開く」も使えます。長い文章は「続きを読む」で開きます。</p>' +
         '<h3>表示の切り替え（プロフィール帳表示）</h3>' +
-        '<p>キャラクターのページ上部の切り替えで、「項目ごと表示」と「📖 プロフィール帳表示」を選べます。プロフィール帳表示では、参考画像が横にスワイプできる形で大きく並び、その横に名前・区分・イメージカラー・タグ・メモ・最終更新日などの基本情報が表示されます。下に並んだ四角い項目（参考画像・プロンプト・リンク・関係性・🔒秘匿情報）をタップすると、背景がぼやけたポップアップで、その項目の中身が見られます（追加や編集もポップアップの中からできます）。最終更新日は、そのキャラクターの内容を保存したときに自動で付け替わります。選んだ表示はそのまま覚えられます。🔒秘匿情報は、プロフィール帳表示では鍵を開けているときでも中身を見せず、黒塗りのまま表示されます。</p>' +
+        '<p>キャラクターのページ上部の切り替えで、「項目ごと表示」と「📖 プロフィール帳表示」を選べます。プロフィール帳表示でも、ページの一番上にはヘッダー（項目ごと表示と同じ帯）が表示されます。その下では、参考画像が横にスワイプできる形で大きく並び、その横に名前・区分・イメージカラー・タグ・メモ・最終更新日などの基本情報が表示されます。下に並んだ四角い項目（参考画像・プロンプト・リンク・関係性・🔒秘匿情報）をタップすると、背景がぼやけたポップアップで、その項目の中身が見られます（追加や編集もポップアップの中からできます）。最終更新日は、そのキャラクターの内容を保存したときに自動で付け替わります。選んだ表示はそのまま覚えられます。🔒秘匿情報は、プロフィール帳表示では鍵を開けているときでも中身を見せず、黒塗りのまま表示されます。</p>' +
         '<h3>デザイン</h3>' +
         '<p>「🎨 デザイン」から、シック・かわいい・ポップ・ナチュラル・ゴージャスの5種類を選べます。変わるのはまわりの枠だけで、写真やアイコン、イメージカラーは元の色のままです。</p>' +
         '<h3>プレビュー</h3>' +
