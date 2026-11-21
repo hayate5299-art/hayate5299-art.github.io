@@ -161,7 +161,7 @@
 
       /* ---------- 画像フレーム（切り抜き表示） ---------- */
       .cropframe { position: relative; overflow: hidden; background: var(--surface2); }
-      .cropframe > img { position: absolute; max-width: none; max-height: none; display: block; }
+      .cropframe > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
       .cropframe.fill { position: absolute; inset: 0; }
       .iconframe { border-radius: 50%; flex: none; border: 1px solid var(--line); }
       .iconinitial {
@@ -635,31 +635,41 @@
     }
     function toggleExpand(key) { ui.expanded[key] = !ui.expanded[key]; render(); }
 
-    /* 切り抜き表示（ヘッダー・アイコン） */
+    /* 切り抜き表示（ヘッダー・アイコン）
+       表示はCSSだけで決めます（object-fit: cover ＋ object-position）。
+       ・保存された位置が 0（端）でもそのまま効かせ、未設定のときだけ真ん中（0.5）にします
+         （以前は 0 を「未設定」と誤判定して、端寄せが真ん中に戻ってしまっていました）
+       ・保存された幅・高さ（w/h）が無い画像でも、ブラウザが実寸から正しく切り抜きます
+         （以前は 1×1 として計算され、引き伸ばされて表示されていました）
+       ・大きさ（zoom）は、表示位置を支点にした transform で再現します
+         （切り抜き編集画面の計算：支点の点は動かず、まわりが拡大する、と一致します） */
+    function cropVal(v, def) {
+      if (v == null) return def;
+      var n = +v;
+      return isFinite(n) ? n : def;
+    }
+    function cropStyle(crop) {
+      crop = crop || {};
+      var x = Math.min(1, Math.max(0, cropVal(crop.x, .5)));
+      var y = Math.min(1, Math.max(0, cropVal(crop.y, .5)));
+      var z = cropVal(crop.zoom, 1); if (!(z > 0)) z = 1;
+      var xp = Math.round(x * 10000) / 100, yp = Math.round(y * 10000) / 100;
+      var s = 'object-position:' + xp + '% ' + yp + '%';
+      if (z !== 1) s += ';transform:scale(' + z + ');transform-origin:' + xp + '% ' + yp + '%';
+      return s;
+    }
     function cropImgHTML(img, crop, cls) {
-      crop = crop || { x: .5, y: .5, zoom: 1 };
-      return '<div class="cropframe ' + (cls || '') + '"><img alt="" src="' + img.src + '" data-nw="' + (img.w || 1) + '" data-nh="' + (img.h || 1) +
-        '" data-x="' + crop.x + '" data-y="' + crop.y + '" data-zoom="' + crop.zoom + '"></div>';
+      return '<div class="cropframe ' + (cls || '') + '"><img alt="" src="' + img.src + '" style="' + cropStyle(crop) + '"></div>';
     }
     function iconHTML(c, size) {
       if (c.icon && c.icon.src) {
         return '<div class="cropframe iconframe" style="width:' + size + 'px;height:' + size + 'px">' +
-          '<img alt="" src="' + c.icon.src + '" data-nw="' + (c.icon.w || 1) + '" data-nh="' + (c.icon.h || 1) +
-          '" data-x="' + c.icon.x + '" data-y="' + c.icon.y + '" data-zoom="' + c.icon.zoom + '"></div>';
+          '<img alt="" src="' + c.icon.src + '" style="' + cropStyle(c.icon) + '"></div>';
       }
       return '<div class="iconinitial" style="width:' + size + 'px;height:' + size + 'px;background:' + esc(c.color || '#888') + ';font-size:' + Math.round(size * .48) + 'px">' + esc(initialOf(c)) + '</div>';
     }
     function layoutCrops() {
-      document.querySelectorAll('.cropframe').forEach(function (f) {
-        var img = f.querySelector('img'); if (!img) return;
-        var W = f.clientWidth, H = f.clientHeight; if (!W || !H) return;
-        var nw = +img.getAttribute('data-nw') || 1, nh = +img.getAttribute('data-nh') || 1;
-        var s = Math.max(W / nw, H / nh) * (+img.getAttribute('data-zoom') || 1);
-        var w = nw * s, h = nh * s;
-        img.style.width = w + 'px'; img.style.height = h + 'px';
-        img.style.left = ((+img.getAttribute('data-x') || .5) * (W - w)) + 'px';
-        img.style.top = ((+img.getAttribute('data-y') || .5) * (H - h)) + 'px';
-      });
+      /* 切り抜き表示はCSSだけで完結するため、再計算は不要です（呼び出し側の互換のために残しています） */
     }
     window.addEventListener('resize', layoutCrops);
 </script>
@@ -1435,7 +1445,11 @@
     /* ================= 切り抜きエディタ ================= */
     var cropEd = null;
     function openCrop(src, w, h, aspect, init, onDone) {
-      cropEd = { src: src, w: w || 1, h: h || 1, x: init ? init.x : .5, y: init ? init.y : .5, zoom: init ? init.zoom : 1, onDone: onDone };
+      cropEd = { src: src, w: w || 1, h: h || 1,
+        x: Math.min(1, Math.max(0, cropVal(init ? init.x : null, .5))),
+        y: Math.min(1, Math.max(0, cropVal(init ? init.y : null, .5))),
+        zoom: (function () { var z = cropVal(init ? init.zoom : null, 1); return z > 0 ? z : 1; })(),
+        onDone: onDone };
       var circle = aspect === '1 / 1';
       var cropTitle = aspect === '16 / 7' ? 'ヘッダーの位置を調整' : (circle ? 'アイコンの位置を調整' : 'プロフィール帳表示の位置を調整');
       openSheet(sheetHead(cropTitle) +
@@ -1449,6 +1463,17 @@
       var stage = document.getElementById('cropstage');
       var img = document.getElementById('cropimg');
       layoutCropStage();
+      /* 保存されている幅・高さが実寸と違うときは、実寸に合わせて編集画面を計算し直します */
+      var probe = new Image();
+      probe.onload = function () {
+        if (!cropEd || cropEd.src !== src) return;
+        if (probe.naturalWidth > 0 && probe.naturalHeight > 0 &&
+            (probe.naturalWidth !== cropEd.w || probe.naturalHeight !== cropEd.h)) {
+          cropEd.w = probe.naturalWidth; cropEd.h = probe.naturalHeight;
+          layoutCropStage();
+        }
+      };
+      probe.src = src;
       document.getElementById('cropzoom').addEventListener('input', function (e) {
         cropEd.zoom = parseFloat(e.target.value); layoutCropStage();
       });
@@ -1644,7 +1669,7 @@
     function formIconHTML() {
       if (form.icon) {
         return '<span class="cropframe iconframe" style="display:inline-block;width:64px;height:64px"><img alt="" src="' + form.icon.src +
-          '" data-nw="' + form.icon.w + '" data-nh="' + form.icon.h + '" data-x="' + form.icon.x + '" data-y="' + form.icon.y + '" data-zoom="' + form.icon.zoom + '"></span>';
+          '" style="' + cropStyle(form.icon) + '"></span>';
       }
       var nm = formHeadName() || '？';
       return '<span class="iconinitial" style="display:inline-flex;width:64px;height:64px;background:' + esc(form.color) + ';font-size:30px">' + esc(nm.charAt(0)) + '</span>';
